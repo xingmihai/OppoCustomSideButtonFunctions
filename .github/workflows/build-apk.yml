@@ -87,6 +87,7 @@ jobs:
 
       - name: Publish build logs to ci-logs branch
         if: always()
+        continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
