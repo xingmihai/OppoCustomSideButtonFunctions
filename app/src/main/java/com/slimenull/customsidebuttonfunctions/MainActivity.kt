@@ -7,8 +7,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.captionBar
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
@@ -50,6 +53,7 @@ import com.slimenull.customsidebuttonfunctions.ui.MainPagerState
 import com.slimenull.customsidebuttonfunctions.ui.Navigator
 import com.slimenull.customsidebuttonfunctions.ui.Route
 import com.slimenull.customsidebuttonfunctions.ui.rememberMainPagerState
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
@@ -251,8 +255,9 @@ private fun HomeContent(
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .fillMaxHeight()
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .overScrollVertical(),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -308,7 +313,15 @@ private fun HomeContent(
                     }
                 }
             }
-            item { Spacer(modifier = Modifier.height(12.dp)) }
+            item {
+                Spacer(
+                    Modifier.padding(
+                        bottom = WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding() +
+                            WindowInsets.captionBar.asPaddingValues().calculateBottomPadding()
+                    )
+                )
+            }
         }
     }
 }
@@ -406,8 +419,9 @@ private fun GesturePage(
     ) { padding ->
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .fillMaxHeight()
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .overScrollVertical(),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -506,7 +520,15 @@ private fun GesturePage(
                     )
                 }
             }
-            item { Spacer(modifier = Modifier.height(12.dp)) }
+            item {
+                Spacer(
+                    Modifier.padding(
+                        bottom = WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding() +
+                            WindowInsets.captionBar.asPaddingValues().calculateBottomPadding()
+                    )
+                )
+            }
         }
     }
 }
@@ -577,6 +599,7 @@ private fun MorsePage(
     var editing by remember { mutableStateOf<MorseBinding?>(null) }
     var editorVisible by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<MorseBinding?>(null) }
+    var deleteVisible by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -602,8 +625,9 @@ private fun MorsePage(
     ) { padding ->
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .fillMaxHeight()
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .overScrollVertical(),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -682,7 +706,15 @@ private fun MorsePage(
                     )
                 }
             }
-            item { Spacer(modifier = Modifier.height(12.dp)) }
+            item {
+                Spacer(
+                    Modifier.padding(
+                        bottom = WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding() +
+                            WindowInsets.captionBar.asPaddingValues().calculateBottomPadding()
+                    )
+                )
+            }
         }
 
         val target = editing
@@ -697,6 +729,7 @@ private fun MorsePage(
                     {
                         editorVisible = false
                         pendingDelete = target
+                        deleteVisible = true
                     }
                 },
                 onConfirm = { next ->
@@ -715,26 +748,32 @@ private fun MorsePage(
             OverlayDialog(
                 title = "删除指令",
                 summary = "确定删除序列 ${morseSequenceTitle(deleting.sequence)} 吗？",
-                show = true,
-                onDismissRequest = { pendingDelete = null }
+                show = deleteVisible,
+                onDismissRequest = { deleteVisible = false },
+                onDismissFinished = { pendingDelete = null }
             ) {
-                TextButton(
-                    text = "删除",
-                    onClick = {
-                        persist(
-                            settings.copy(
-                                morseBindings = settings.morseBindings.filter { it.sequence != deleting.sequence }
+                Row(horizontalArrangement = Arrangement.SpaceBetween) {
+                    TextButton(
+                        text = "取消",
+                        onClick = { deleteVisible = false },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(Modifier.width(20.dp))
+                    TextButton(
+                        text = "删除",
+                        onClick = {
+                            persist(
+                                settings.copy(
+                                    morseBindings = settings.morseBindings
+                                        .filter { it.sequence != deleting.sequence }
+                                )
                             )
-                        )
-                        pendingDelete = null
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                TextButton(
-                    text = "取消",
-                    onClick = { pendingDelete = null },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                            deleteVisible = false
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.textButtonColorsPrimary()
+                    )
+                }
             }
         }
     }
@@ -896,8 +935,9 @@ private fun FeedbackPage(
     ) { padding ->
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .fillMaxHeight()
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .overScrollVertical(),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -947,7 +987,15 @@ private fun FeedbackPage(
                     )
                 }
             }
-            item { Spacer(modifier = Modifier.height(12.dp)) }
+            item {
+                Spacer(
+                    Modifier.padding(
+                        bottom = WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding() +
+                            WindowInsets.captionBar.asPaddingValues().calculateBottomPadding()
+                    )
+                )
+            }
         }
     }
 }
@@ -973,8 +1021,9 @@ private fun SettingsContent(
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .fillMaxHeight()
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .overScrollVertical(),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -1054,7 +1103,15 @@ private fun SettingsContent(
                     )
                 }
             }
-            item { Spacer(modifier = Modifier.height(12.dp)) }
+            item {
+                Spacer(
+                    Modifier.padding(
+                        bottom = WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding() +
+                            WindowInsets.captionBar.asPaddingValues().calculateBottomPadding()
+                    )
+                )
+            }
         }
     }
 }
@@ -1087,8 +1144,9 @@ private fun AdvancedPage(
     ) { padding ->
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .fillMaxHeight()
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .overScrollVertical(),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -1135,7 +1193,15 @@ private fun AdvancedPage(
                     )
                 }
             }
-            item { Spacer(modifier = Modifier.height(12.dp)) }
+            item {
+                Spacer(
+                    Modifier.padding(
+                        bottom = WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding() +
+                            WindowInsets.captionBar.asPaddingValues().calculateBottomPadding()
+                    )
+                )
+            }
         }
     }
 }
@@ -1157,8 +1223,9 @@ private fun AboutContent(padding: PaddingValues) {
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .fillMaxHeight()
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .overScrollVertical(),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -1200,7 +1267,15 @@ private fun AboutContent(padding: PaddingValues) {
                     )
                 }
             }
-            item { Spacer(modifier = Modifier.height(12.dp)) }
+            item {
+                Spacer(
+                    Modifier.padding(
+                        bottom = WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding() +
+                            WindowInsets.captionBar.asPaddingValues().calculateBottomPadding()
+                    )
+                )
+            }
         }
     }
 }
