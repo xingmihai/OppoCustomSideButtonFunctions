@@ -88,7 +88,18 @@ object SettingsStore {
 
     fun save(settings: AppSettings) {
         initializeRemotePreferences()
-        if (!writeRemote(settings)) pendingRemoteSettings = settings
+        val written = writeRemote(settings)
+        if (!written) pendingRemoteSettings = settings
+        try {
+            XposedBridge.log(
+                "CustomSideButtonFunctions: [diag] save: remoteWrite=$written serviceBound=${remoteService != null} " +
+                    "mode=${settings.operationMode} single=${settings.singleAction} " +
+                    "double=${settings.doubleAction} long=${settings.longAction} " +
+                    "singleCustom=${settings.singleCustom.commonAction} keyCode=${settings.keyCode}"
+            )
+        } catch (_: LinkageError) {
+            android.util.Log.i("CustomSideButtonFunctions", "[diag] save: remoteWrite=$written")
+        }
     }
 
     private fun migrateLocalSettingsIfRemoteIsEmpty(service: XposedService): AppSettings? {

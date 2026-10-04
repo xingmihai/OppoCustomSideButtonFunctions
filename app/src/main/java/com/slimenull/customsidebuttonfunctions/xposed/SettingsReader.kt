@@ -9,6 +9,10 @@ import io.github.libxposed.api.XposedInterface
 internal object SettingsReader {
     private var api: XposedInterface? = null
 
+    /** 仅用于诊断：记录上一次读到的设置快照，变化时打日志，避免每次按键刷屏。 */
+    @Volatile
+    private var lastSnapshot: String? = null
+
     fun bind(value: XposedInterface) {
         api = value
     }
@@ -17,7 +21,19 @@ internal object SettingsReader {
         val prefs = runCatching {
             api?.getRemotePreferences(SettingsStore.PREFS_NAME)
         }.onXposedFailure("load shared preferences").getOrNull()
-        return prefs?.let(SettingsStore::fromPreferences) ?: AppSettings()
+        if (prefs == null) {
+            XposedBridge.log("CustomSideButtonFunctions: [diag] load: remote preferences unavailable, using defaults")
+            return AppSettings()
+        }
+        val settings = SettingsStore.fromPreferences(prefs)
+        val snapshot = "enabled=${settings.enabled} mode=${settings.operationMode} " +
+            "single=${settings.singleAction} double=${settings.doubleAction} long=${settings.longAction} " +
+            "singleCustom=${settings.singleCustom.commonAction} keyCode=${settings.keyCode}"
+        if (snapshot != lastSnapshot) {
+            lastSnapshot = snapshot
+            XposedBridge.log("CustomSideButtonFunctions: [diag] load: settings changed -> $snapshot")
+        }
+        return settings
     }
 
     fun peekKeyCode(): Int = load().keyCode
