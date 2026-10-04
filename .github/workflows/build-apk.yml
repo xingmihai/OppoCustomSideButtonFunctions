@@ -1,0 +1,113 @@
+name: Build Signed APK
+
+on:
+  push:
+    branches: [ "master" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Sign APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept SDK licenses & install platforms
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager --install "platform-tools" "platforms;android-37" "build-tools;36.0.0" > /dev/null 2>&1 || true
+          echo "SDK 就绪"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      # 签名优先读仓库 Secrets；没配则回退到仓库内的 keystore/keystore.properties
+      - name: Prepare signing config
+        env:
+          KS_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          KS_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          KS_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          KS_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 --decode > keystore/ci-signing.jks
+            printf 'storeFile=keystore/ci-signing.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+              "$KS_STORE_PASSWORD" "$KS_KEY_ALIAS" "$KS_KEY_PASSWORD" > keystore/keystore.properties
+            echo "使用 Secrets 中的签名配置"
+          else
+            echo "未配置 SIGNING_KEYSTORE_BASE64，回退使用仓库内 keystore/keystore.properties"
+          fi
+
+      - name: Build Release APK
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Build Debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon
+
+      - name: Collect APKs
+        id: collect
+        run: |
+          VERSION=$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/' | tr -d ' ')
+          [ -z "$VERSION" ] && VERSION="dev"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk   "out/CustomSideButtonFunctions-${VERSION}-release-signed.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk       "out/CustomSideButtonFunctions-${VERSION}-debug.apk"
+          ls -lh out
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: CustomSideButtonFunctions-${{ steps.collect.outputs.version }}
+          path: out/*.apk
+          if-no-files-found: error
+
+      # 打 tag（v1.0.5 这种）推送时，自动发一个 Release 并附上 APK
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*release-signed.apk
+          name: CustomSideButtonFunctions ${{ steps.collect.outputs.version }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # master 每次推送后，把最新 APK 同步到 apk 分支，方便直接下载
+      - name: Push APK to apk branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B apk
+          mkdir -p apk
+          cp out/*.apk apk/
+          git add -f apk
+          if git diff --cached --quiet; then
+            echo "APK 无变化，跳过提交"
+          else
+            git commit -m "chore: update built APK ${{ steps.collect.outputs.version }}"
+            git push origin apk
+          fi

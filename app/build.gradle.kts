@@ -1,3 +1,5 @@
+import java.io.InputStreamReader
+import java.nio.charset.StandardCharsets
 import java.util.Properties
 
 plugins {
@@ -5,9 +7,12 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// 以 UTF-8 读取，避免中文 keyAlias / 密码被按 ISO-8859-1 解码成乱码
 val signingProperties = Properties().apply {
     val propertiesFile = rootProject.file("keystore/keystore.properties")
-    if (propertiesFile.isFile) propertiesFile.inputStream().use(::load)
+    if (propertiesFile.isFile) {
+        InputStreamReader(propertiesFile.inputStream(), StandardCharsets.UTF_8).use(::load)
+    }
 }
 
 android {
