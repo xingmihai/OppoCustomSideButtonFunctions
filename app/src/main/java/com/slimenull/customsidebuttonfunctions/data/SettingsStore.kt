@@ -93,29 +93,15 @@ object SettingsStore {
         val written = writeRemote(settings)
         if (!written) pendingRemoteSettings = settings
         val snapshotWritten = writeSnapshotFile(settings)
+        if (written && snapshotWritten) {
+            // 两条通道都写成功才静默返回；任一失败都记录，便于定位
+            return
+        }
+        val message = "settings saved partially: remoteWrite=$written snapshotFile=$snapshotWritten"
         try {
-            val readBack = remoteService?.let { service ->
-                runCatching {
-                    val prefs = service.getRemotePreferences(PREFS_NAME)
-                    "allSize=${prefs.all.size} " +
-                        "enabled=${prefs.all["enabled"]} " +
-                        "mode=${prefs.all["operation_mode"]} " +
-                        "single=${prefs.all["single_action"]} " +
-                        "double=${prefs.all["double_action"]} " +
-                        "long=${prefs.all["long_action"]} " +
-                        "keyCode=${prefs.all["key_code"]}"
-                }.getOrDefault("readBackFailed")
-            } ?: "noService"
-            XposedBridge.log(
-                "CustomSideButtonFunctions: [diag] save: remoteWrite=$written serviceBound=${remoteService != null} " +
-                    "mode=${settings.operationMode} single=${settings.singleAction} " +
-                    "double=${settings.doubleAction} long=${settings.longAction} " +
-                    "singleCustom=${settings.singleCustom.commonAction} keyCode=${settings.keyCode}"
-            )
-            XposedBridge.log("CustomSideButtonFunctions: [diag] saveReadBack: $readBack")
-            XposedBridge.log("CustomSideButtonFunctions: [diag] snapshotFile: written=$snapshotWritten")
+            XposedBridge.log("CustomSideButtonFunctions: $message")
         } catch (_: LinkageError) {
-            android.util.Log.i("CustomSideButtonFunctions", "[diag] save: remoteWrite=$written snapshot=$snapshotWritten")
+            android.util.Log.w("CustomSideButtonFunctions", message)
         }
     }
 

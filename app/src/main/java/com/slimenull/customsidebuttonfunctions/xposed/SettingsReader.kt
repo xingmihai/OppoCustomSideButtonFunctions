@@ -12,7 +12,11 @@ import org.json.JSONObject
 internal object SettingsReader {
     private var api: XposedInterface? = null
 
-    /** 仅用于诊断：记录上一次读到的设置快照，变化时打日志，避免每次按键刷屏。 */
+    /** 最近一次成功读到的文件快照；文件偶发读取失败时复用，避免退回过期的偏好快照导致行为跳变。 */
+    @Volatile
+    private var lastFromFile: AppSettings? = null
+
+    /** 仅在设置内容真正变化时打一次日志，避免每次按键刷屏。 */
     @Volatile
     private var lastSnapshot: String? = null
 
@@ -21,29 +25,30 @@ internal object SettingsReader {
     }
 
     fun load(): AppSettings {
-        // RemotePreferences 的快照可能已过期，优先读取每次重新打开的远程文件
+        // system_server 侧的 RemotePreferences 会停留在开机时的快照，
+        // 因此优先读取每次重新打开的远程文件。
         val fromFile = readSnapshotFile()
-        if (fromFile != null) return fromFile
+        if (fromFile != null) {
+            lastFromFile = fromFile
+            logIfChanged("file", snapshotOf(fromFile))
+            return fromFile
+        }
+
+        // 文件不可用：优先复用上一次成功读到的文件值
+        lastFromFile?.let { cached ->
+            XposedBridge.log("CustomSideButtonFunctions: snapshot file unreadable, reusing last known settings")
+            return cached
+        }
 
         val prefs = runCatching {
             api?.getRemotePreferences(SettingsStore.PREFS_NAME)
         }.onXposedFailure("load shared preferences").getOrNull()
         if (prefs == null) {
-            XposedBridge.log("CustomSideButtonFunctions: [diag] load: remote preferences unavailable, using defaults")
+            XposedBridge.log("CustomSideButtonFunctions: remote preferences unavailable, using defaults")
             return AppSettings()
         }
         val settings = SettingsStore.fromPreferences(prefs)
-        val snapshot = "enabled=${settings.enabled} mode=${settings.operationMode} " +
-            "single=${settings.singleAction} double=${settings.doubleAction} long=${settings.longAction} " +
-            "singleCustom=${settings.singleCustom.commonAction} keyCode=${settings.keyCode}"
-        val changed = snapshot != lastSnapshot
-        lastSnapshot = snapshot
-        // 每次都打印，便于确认 system_server 究竟读到的是旧值还是默认值
-        XposedBridge.log(
-            "CustomSideButtonFunctions: [diag] load: source=prefs changed=$changed allSize=${prefs.all.size} " +
-                "rawSingle=${prefs.all["single_action"]} rawDouble=${prefs.all["double_action"]} " +
-                "rawLong=${prefs.all["long_action"]} rawMode=${prefs.all["operation_mode"]} | $snapshot"
-        )
+        logIfChanged("prefs", snapshotOf(settings))
         return settings
     }
 
@@ -56,18 +61,24 @@ internal object SettingsReader {
                     stream.readBytes().toString(Charsets.UTF_8)
                 }
             } ?: return null
-            val settings = JSONObject(text).toAppSettings()
-            val snapshot = "enabled=${settings.enabled} mode=${settings.operationMode} " +
-                "single=${settings.singleAction} double=${settings.doubleAction} long=${settings.longAction} " +
-                "singleCustom=${settings.singleCustom.commonAction} keyCode=${settings.keyCode}"
-            val changed = snapshot != lastSnapshot
-            lastSnapshot = snapshot
-            XposedBridge.log("CustomSideButtonFunctions: [diag] load: source=file changed=$changed len=${text.length} | $snapshot")
-            settings
+            JSONObject(text).toAppSettings()
         } catch (error: Throwable) {
-            XposedBridge.log("CustomSideButtonFunctions: [diag] load: source=file failed: ${error.javaClass.simpleName}: ${error.message}")
+            XposedBridge.log(
+                "CustomSideButtonFunctions: snapshot file read failed: ${error.javaClass.simpleName}: ${error.message}"
+            )
             null
         }
+    }
+
+    private fun snapshotOf(settings: AppSettings): String =
+        "enabled=${settings.enabled} mode=${settings.operationMode} " +
+            "single=${settings.singleAction} double=${settings.doubleAction} long=${settings.longAction} " +
+            "singleCustom=${settings.singleCustom.commonAction} keyCode=${settings.keyCode}"
+
+    private fun logIfChanged(source: String, snapshot: String) {
+        if (snapshot == lastSnapshot) return
+        lastSnapshot = snapshot
+        XposedBridge.log("CustomSideButtonFunctions: settings updated ($source): $snapshot")
     }
 
     fun peekKeyCode(): Int = load().keyCode
