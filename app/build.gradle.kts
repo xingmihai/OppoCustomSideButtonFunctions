@@ -5,6 +5,7 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 // 以 UTF-8 读取，避免中文 keyAlias / 密码被按 ISO-8859-1 解码成乱码
@@ -72,14 +73,14 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.activity:activity-compose:1.10.1")
-    implementation("androidx.compose.runtime:runtime:1.8.0")
-    implementation("androidx.compose.ui:ui:1.8.0")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.8.0")
-    implementation("androidx.compose.foundation:foundation:1.8.0")
-    implementation("androidx.compose.material:material-icons-extended-android:1.7.8")
-    implementation("androidx.compose.material3:material3:1.3.2")
-    debugImplementation("androidx.compose.ui:ui-tooling:1.8.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
+
+    // Miuix：HyperOS 风格 Compose UI
+    implementation("top.yukonga.miuix.kmp:miuix-ui:0.9.4")
+    implementation("top.yukonga.miuix.kmp:miuix-preference:0.9.4")
+    implementation("top.yukonga.miuix.kmp:miuix-icons:0.9.4")
+    implementation("top.yukonga.miuix.kmp:miuix-nav:0.9.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     // Xposed/LSPosed supplies these classes at runtime; they must not be packaged in the APK.
     compileOnly("io.github.libxposed:api:102.0.0")
