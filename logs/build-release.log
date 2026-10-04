@@ -1,0 +1,83 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :app:mergeReleaseJniLibFolders
+> Task :app:mergeReleaseNativeLibs
+> Task :app:checkReleaseDuplicateClasses
+> Task :app:generateReleaseBuildConfig
+> Task :app:generateReleaseResources
+> Task :app:packageReleaseResources
+> Task :app:processReleaseNavigationResources
+> Task :app:stripReleaseDebugSymbols
+> Task :app:extractReleaseNativeSymbolTables
+> Task :app:javaPreCompileRelease
+> Task :app:parseReleaseLocalResources
+> Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:mergeReleaseArtProfile
+> Task :app:generateReleaseRFile
+> Task :app:checkReleaseAarMetadata
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:compileReleaseNavigationResources
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease
+> Task :app:processReleaseMainManifest
+> Task :app:mergeReleaseResources
+> Task :app:processReleaseManifest
+> Task :app:extractProguardFiles
+> Task :app:processReleaseManifestForPackage
+> Task :app:mergeReleaseStartupProfile
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets
+> Task :app:compressReleaseAssets
+> Task :app:extractReleaseVersionControlInfo
+> Task :app:processReleaseResources
+> Task :app:collectReleaseDependencies
+> Task :app:sdkReleaseDependencyData
+> Task :app:validateSigningRelease
+> Task :app:writeReleaseAppMetadata
+> Task :app:writeReleaseSigningConfigVersions
+
+> Task :app:compileReleaseKotlin
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/MainActivity.kt:643:29 'when' is exhaustive so 'else' is redundant here.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/data/SettingsStore.kt:117:59 Unnecessary safe call on a non-null receiver of type 'ParcelFileDescriptor'.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/ActionExecutor.kt:621:61 'static field VIBRATOR_SERVICE: String' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/CursorControlController.kt:268:54 Unnecessary safe call on a non-null receiver of type 'CursorControlController.CursorPress'.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/CursorControlController.kt:269:51 Unnecessary safe call on a non-null receiver of type 'CursorControlController.CursorPress'.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/CursorControlController.kt:276:40 Unnecessary non-null assertion (!!) on a non-null receiver of type 'KeyEvent'.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/CursorControlController.kt:276:57 Unnecessary non-null assertion (!!) on a non-null receiver of type 'CursorControlMode'.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/CursorControlController.kt:293:58 'val callState: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/SettingsReader.kt:59:73 Unnecessary safe call on a non-null receiver of type 'ParcelFileDescriptor'.
+
+> Task :app:compileReleaseJavaWithJavac
+> Task :app:mergeReleaseGeneratedProguardFiles
+> Task :app:processReleaseJavaRes
+> Task :app:generateReleaseLintVitalReportModel
+> Task :app:expandReleaseArtProfileWildcards
+> Task :app:mergeReleaseJavaResource
+> Task :app:produceReleaseComposeMapping
+> Task :app:reportReleaseComposeMappingErrors
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:minifyReleaseWithR8
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:mergeReleaseComposeMapping
+> Task :app:convertShrunkResourcesToBinaryRelease
+> Task :app:optimizeReleaseResources
+> Task :app:compileReleaseArtProfile
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:assembleRelease
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/build_release-1791113995573.json
+
+[Incubating] Problems report is available at: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 2m 23s
+52 actionable tasks: 52 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html

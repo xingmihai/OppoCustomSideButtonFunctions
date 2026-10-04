@@ -1,0 +1,69 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:processDebugNavigationResources
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:javaPreCompileDebug
+> Task :app:mergeDebugAssets
+> Task :app:parseDebugLocalResources
+> Task :app:compressDebugAssets
+> Task :app:generateDebugRFile
+> Task :app:generateDebugGlobalSynthetics
+> Task :app:desugarDebugFileDependencies
+> Task :app:checkDebugDuplicateClasses
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:mergeLibDexDebug
+> Task :app:compileDebugNavigationResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:processDebugMainManifest
+> Task :app:mergeDebugResources
+> Task :app:processDebugManifest
+> Task :app:mergeDebugJniLibFolders
+> Task :app:processDebugManifestForPackage
+> Task :app:mergeDebugNativeLibs
+> Task :app:stripDebugDebugSymbols
+> Task :app:processDebugResources
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:mergeExtDexDebug
+
+> Task :app:compileDebugKotlin
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/MainActivity.kt:643:29 'when' is exhaustive so 'else' is redundant here.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/data/SettingsStore.kt:117:59 Unnecessary safe call on a non-null receiver of type 'ParcelFileDescriptor'.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/ActionExecutor.kt:621:61 'static field VIBRATOR_SERVICE: String' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/CursorControlController.kt:268:54 Unnecessary safe call on a non-null receiver of type 'CursorControlController.CursorPress'.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/CursorControlController.kt:269:51 Unnecessary safe call on a non-null receiver of type 'CursorControlController.CursorPress'.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/CursorControlController.kt:276:40 Unnecessary non-null assertion (!!) on a non-null receiver of type 'KeyEvent'.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/CursorControlController.kt:276:57 Unnecessary non-null assertion (!!) on a non-null receiver of type 'CursorControlMode'.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/CursorControlController.kt:293:58 'val callState: Int' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/app/src/main/java/com/slimenull/customsidebuttonfunctions/xposed/SettingsReader.kt:59:73 Unnecessary safe call on a non-null receiver of type 'ParcelFileDescriptor'.
+
+> Task :app:compileDebugJavaWithJavac
+> Task :app:processDebugJavaRes
+> Task :app:mergeDebugJavaResource
+> Task :app:dexBuilderDebug
+> Task :app:mergeProjectDexDebug
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/build_debug-1791114131644.json
+
+[Incubating] Problems report is available at: file:///home/runner/work/OppoCustomSideButtonFunctions/OppoCustomSideButtonFunctions/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 45s
+38 actionable tasks: 38 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html
