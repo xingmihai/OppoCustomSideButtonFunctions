@@ -241,8 +241,9 @@ private fun MainPage(
     val pageNestedScrollConnection =
         PagerDefaults.pageNestedScrollConnection(pagerState, Orientation.Horizontal)
 
-    val backdrop = rememberAppBlurBackdrop(ui)
-    val blurActive = backdrop != null
+    // 底栏单独使用一个 backdrop：采集范围是下面包住 pager 的 Box。分页顶栏消费的是分页
+    // 各自的 backdrop（不同对象），因此不会出现“采集自己、又读自己”的循环。
+    val navBackdrop = rememberAppBlurBackdrop(ui)
 
     Scaffold(
         bottomBar = {
@@ -250,14 +251,14 @@ private fun MainPage(
                 page = mainPagerState.selectedPage,
                 mainPagerState = mainPagerState,
                 ui = ui,
-                backdrop = backdrop
+                backdrop = navBackdrop
             )
         }
     ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .then(if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier)
+                .then(if (navBackdrop != null) Modifier.layerBackdrop(navBackdrop) else Modifier)
         ) {
             HorizontalPager(
                 state = pagerState,
@@ -273,23 +274,17 @@ private fun MainPage(
                             persist = persist,
                             navigator = navigator,
                             ui = ui,
-                            persistUi = persistUi,
-                            backdrop = backdrop
+                            persistUi = persistUi
                         )
 
-                        PAGE_ABOUT -> AboutContent(
-                            padding = padding,
-                            ui = ui,
-                            backdrop = backdrop
-                        )
+                        PAGE_ABOUT -> AboutContent(padding = padding, ui = ui)
 
                         else -> HomeContent(
                             padding = padding,
                             settings = settings,
                             persist = persist,
                             navigator = navigator,
-                            ui = ui,
-                            backdrop = backdrop
+                            ui = ui
                         )
                     }
                 }
@@ -304,10 +299,10 @@ private fun HomeContent(
     settings: AppSettings,
     persist: (AppSettings) -> Unit,
     navigator: Navigator,
-    ui: UiSettings,
-    backdrop: LayerBackdrop?
+    ui: UiSettings
 ) {
     val scrollBehavior = MiuixScrollBehavior()
+    val backdrop = rememberAppBlurBackdrop(ui)
     val blurActive = backdrop != null
     val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
     Scaffold(
@@ -1207,10 +1202,10 @@ private fun SettingsContent(
     persist: (AppSettings) -> Unit,
     navigator: Navigator,
     ui: UiSettings,
-    persistUi: (UiSettings) -> Unit,
-    backdrop: LayerBackdrop?
+    persistUi: (UiSettings) -> Unit
 ) {
     val scrollBehavior = MiuixScrollBehavior()
+    val backdrop = rememberAppBlurBackdrop(ui)
     val blurActive = backdrop != null
     val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
     Scaffold(
@@ -1476,11 +1471,11 @@ private fun AdvancedPage(
 @Composable
 private fun AboutContent(
     padding: PaddingValues,
-    ui: UiSettings,
-    backdrop: LayerBackdrop?
+    ui: UiSettings
 ) {
     val context = LocalContext.current
     val scrollBehavior = MiuixScrollBehavior()
+    val backdrop = rememberAppBlurBackdrop(ui)
     val blurActive = backdrop != null
     val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
     Scaffold(

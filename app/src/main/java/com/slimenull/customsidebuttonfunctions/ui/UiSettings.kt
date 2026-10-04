@@ -10,8 +10,14 @@ import android.content.Context
  * 读到一堆用不上的字段。
  */
 data class UiSettings(
-    /** 启用模糊效果（需要设备支持 RuntimeShader）。 */
-    val enableBlur: Boolean = true,
+    /**
+     * 启用模糊效果（需要设备支持 RuntimeShader）。
+     *
+     * 默认关闭：模糊依赖 RuntimeShader 采集背景图层，不同机型/系统版本的 GPU 路径差异较大。
+     * 默认关闭可保证冷启动一定成功，用户可以自行开启；一旦开启后反复闪退，
+     * 在「设置 → 应用管理」中清除本应用数据即可回到关闭状态。
+     */
+    val enableBlur: Boolean = false,
     /** 顶部应用栏模糊样式：0 = Gaussian，1 = Progressive。 */
     val blurStyle: Int = 0,
     /** 使用悬浮导航栏替代贴底导航栏。 */
@@ -46,7 +52,7 @@ object UiSettingsStore {
     fun load(context: Context): UiSettings {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return UiSettings(
-            enableBlur = prefs.getBoolean(KEY_ENABLE_BLUR, true),
+            enableBlur = prefs.getBoolean(KEY_ENABLE_BLUR, false),
             blurStyle = prefs.getInt(KEY_BLUR_STYLE, 0),
             useFloatingNavigationBar = prefs.getBoolean(KEY_USE_FLOATING_NAV, false),
             floatingNavigationBarStyle = prefs.getInt(KEY_FLOATING_NAV_STYLE, 0),
