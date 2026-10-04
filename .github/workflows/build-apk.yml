@@ -84,13 +84,23 @@ jobs:
         run: |
           ./gradlew :app:assembleDebug --no-daemon 2>&1 | tee build-debug.log
 
-      - name: Upload build logs
+      - name: Publish build logs to ci-logs branch
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs
-          path: build-*.log
-          if-no-files-found: warn
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B ci-logs
+          mkdir -p logs
+          { echo "=== env ==="; java -version 2>&1; echo "--- sdk ---"; ls "$ANDROID_HOME"; ls "$ANDROID_HOME/platforms" 2>/dev/null; ls "$ANDROID_HOME/build-tools" 2>/dev/null; } > logs/env.txt 2>&1
+          cp build-release.log logs/ 2>/dev/null || true
+          cp build-debug.log logs/ 2>/dev/null || true
+          git add -f logs
+          if git diff --cached --quiet; then
+            echo "日志无变化"
+          else
+            git commit -m "ci: build logs for run $GITHUB_RUN_ID"
+            git push --force origin ci-logs
+          fi
 
       - name: Collect APKs
         id: collect
