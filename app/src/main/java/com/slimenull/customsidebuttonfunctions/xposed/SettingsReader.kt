@@ -29,10 +29,14 @@ internal object SettingsReader {
         val snapshot = "enabled=${settings.enabled} mode=${settings.operationMode} " +
             "single=${settings.singleAction} double=${settings.doubleAction} long=${settings.longAction} " +
             "singleCustom=${settings.singleCustom.commonAction} keyCode=${settings.keyCode}"
-        if (snapshot != lastSnapshot) {
-            lastSnapshot = snapshot
-            XposedBridge.log("CustomSideButtonFunctions: [diag] load: settings changed -> $snapshot")
-        }
+        val changed = snapshot != lastSnapshot
+        lastSnapshot = snapshot
+        // 每次都打印，便于确认 system_server 究竟读到的是旧值还是默认值
+        XposedBridge.log(
+            "CustomSideButtonFunctions: [diag] load: changed=$changed allSize=${prefs.all.size} " +
+                "rawSingle=${prefs.all["single_action"]} rawDouble=${prefs.all["double_action"]} " +
+                "rawLong=${prefs.all["long_action"]} rawMode=${prefs.all["operation_mode"]} | $snapshot"
+        )
         return settings
     }
 
