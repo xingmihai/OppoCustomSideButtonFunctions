@@ -6,3 +6,5 @@ local.properties
 .DS_Store
 keystore/keystore.properties
 keystore/ci-signing.jks
+*.jks
+*.keystore
