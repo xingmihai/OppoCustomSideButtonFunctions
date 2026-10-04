@@ -19,6 +19,8 @@ import com.slimenull.customsidebuttonfunctions.model.MIN_CURSOR_REPEAT_INTERVAL_
 import com.slimenull.customsidebuttonfunctions.model.DEFAULT_UNKNOWN_MORSE_TOAST
 import com.slimenull.customsidebuttonfunctions.model.MorseBinding
 import com.slimenull.customsidebuttonfunctions.model.OperationMode
+import com.slimenull.customsidebuttonfunctions.model.SETTINGS_SNAPSHOT_FILE
+import com.slimenull.customsidebuttonfunctions.model.toSnapshotJson
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
 import org.json.JSONArray
@@ -90,6 +92,7 @@ object SettingsStore {
         initializeRemotePreferences()
         val written = writeRemote(settings)
         if (!written) pendingRemoteSettings = settings
+        val snapshotWritten = writeSnapshotFile(settings)
         try {
             val readBack = remoteService?.let { service ->
                 runCatching {
@@ -110,8 +113,31 @@ object SettingsStore {
                     "singleCustom=${settings.singleCustom.commonAction} keyCode=${settings.keyCode}"
             )
             XposedBridge.log("CustomSideButtonFunctions: [diag] saveReadBack: $readBack")
+            XposedBridge.log("CustomSideButtonFunctions: [diag] snapshotFile: written=$snapshotWritten")
         } catch (_: LinkageError) {
-            android.util.Log.i("CustomSideButtonFunctions", "[diag] save: remoteWrite=$written")
+            android.util.Log.i("CustomSideButtonFunctions", "[diag] save: remoteWrite=$written snapshot=$snapshotWritten")
+        }
+    }
+
+    /**
+     * system_server 侧的 RemotePreferences 会停留在开机时的快照，
+     * 因此额外把完整配置写进远程文件，让模块每次重新打开文件读取最新值。
+     */
+    private fun writeSnapshotFile(settings: AppSettings): Boolean {
+        val service = remoteService ?: return false
+        return try {
+            runCatching { service.deleteRemoteFile(SETTINGS_SNAPSHOT_FILE) }
+            val bytes = settings.toSnapshotJson().toString().toByteArray(Charsets.UTF_8)
+            service.openRemoteFile(SETTINGS_SNAPSHOT_FILE)?.use { descriptor ->
+                java.io.FileOutputStream(descriptor.fileDescriptor).use { stream ->
+                    stream.write(bytes)
+                    stream.flush()
+                }
+            } ?: return false
+            true
+        } catch (error: Throwable) {
+            XposedBridge.log("CustomSideButtonFunctions: [diag] snapshotFile write failed: ${error.javaClass.simpleName}: ${error.message}")
+            false
         }
     }
 
