@@ -12,14 +12,20 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -36,8 +42,10 @@ import com.slimenull.customsidebuttonfunctions.model.CustomActionSettings
 import com.slimenull.customsidebuttonfunctions.model.MorseBinding
 import com.slimenull.customsidebuttonfunctions.model.OperationMode
 import com.slimenull.customsidebuttonfunctions.ui.GestureKind
+import com.slimenull.customsidebuttonfunctions.ui.MainPagerState
 import com.slimenull.customsidebuttonfunctions.ui.Navigator
 import com.slimenull.customsidebuttonfunctions.ui.Route
+import com.slimenull.customsidebuttonfunctions.ui.rememberMainPagerState
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
@@ -56,7 +64,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.icon.extended.Home
-import top.yukonga.miuix.kmp.icon.extended.More
+import top.yukonga.miuix.kmp.icon.extended.Info
 import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.ArrowPreference
@@ -69,6 +77,7 @@ import top.yukonga.miuix.kmp.theme.ThemeController
 import top.yukonga.miuix.kmp.nav.core.NavDisplay
 import top.yukonga.miuix.kmp.nav.core.rememberNavBackStack
 import top.yukonga.miuix.kmp.nav.transition.NavTransitions
+import top.yukonga.miuix.kmp.utils.PagerNavigationSpringSpec
 
 private val AppKeyColor = Color(0xFF347FE8)
 
@@ -106,7 +115,7 @@ fun CustomSideButtonApp() {
     }
 
     MiuixTheme(controller = themeController) {
-        val backStack = rememberNavBackStack<Route>(Route.Home)
+        val backStack = rememberNavBackStack<Route>(Route.Main)
         val navigator = remember(backStack) { Navigator(backStack) }
 
         NavDisplay(
@@ -114,22 +123,12 @@ fun CustomSideButtonApp() {
             onBack = { navigator.pop() },
             transition = NavTransitions.MiuixDefault
         ) {
-            entry<Route.Home> {
-                HomePage(
+            entry<Route.Main> {
+                MainPage(
                     settings = settings,
                     persist = ::persist,
                     navigator = navigator
                 )
-            }
-            entry<Route.Other> {
-                OtherPage(
-                    settings = settings,
-                    persist = ::persist,
-                    navigator = navigator
-                )
-            }
-            entry<Route.About> {
-                AboutPage(navigator = navigator)
             }
             entry<Route.Morse> {
                 MorsePage(
@@ -164,10 +163,70 @@ fun CustomSideButtonApp() {
     }
 }
 
-// ---------------------------------------------------------------- 首页
+// ---------------------------------------------------------------- 主页面（底部导航 + 分页）
+
+private const val MAIN_PAGE_COUNT = 3
+private const val PAGE_HOME = 0
+private const val PAGE_SETTINGS = 1
+private const val PAGE_ABOUT = 2
 
 @Composable
-private fun HomePage(
+private fun MainPage(
+    settings: AppSettings,
+    persist: (AppSettings) -> Unit,
+    navigator: Navigator
+) {
+    val pagerState = rememberPagerState(pageCount = { MAIN_PAGE_COUNT })
+    val mainPagerState = rememberMainPagerState(pagerState)
+
+    LaunchedEffect(pagerState.currentPage) {
+        mainPagerState.syncPage()
+    }
+
+    val flingBehavior = PagerDefaults.flingBehavior(
+        state = pagerState,
+        snapAnimationSpec = PagerNavigationSpringSpec,
+    )
+    val pageNestedScrollConnection =
+        PagerDefaults.pageNestedScrollConnection(pagerState, Orientation.Horizontal)
+
+    Scaffold(
+        bottomBar = {
+            AppNavigationBar(page = mainPagerState.selectedPage, mainPagerState = mainPagerState)
+        }
+    ) { padding ->
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            flingBehavior = flingBehavior,
+            pageNestedScrollConnection = pageNestedScrollConnection,
+            verticalAlignment = Alignment.Top,
+            pageContent = { page ->
+                when (page) {
+                    PAGE_SETTINGS -> SettingsContent(
+                        padding = padding,
+                        settings = settings,
+                        persist = persist,
+                        navigator = navigator
+                    )
+
+                    PAGE_ABOUT -> AboutContent(padding = padding)
+
+                    else -> HomeContent(
+                        padding = padding,
+                        settings = settings,
+                        persist = persist,
+                        navigator = navigator
+                    )
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun HomeContent(
+    padding: PaddingValues,
     settings: AppSettings,
     persist: (AppSettings) -> Unit,
     navigator: Navigator
@@ -180,17 +239,14 @@ private fun HomePage(
                 largeTitle = "侧键功能",
                 scrollBehavior = scrollBehavior
             )
-        },
-        bottomBar = {
-            AppNavigationBar(route = Route.Home, navigator = navigator)
         }
-    ) { padding ->
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             contentPadding = PaddingValues(
-                top = padding.calculateTopPadding(),
+                top = innerPadding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
             )
         ) {
@@ -244,45 +300,30 @@ private fun HomePage(
                     }
                 }
             }
-            item { SmallTitle(text = "其他设置") }
-            item {
-                Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
-                    ArrowPreference(
-                        title = "振动与提示",
-                        summary = "配置触发振动和 Toast 提示",
-                        onClick = { navigator.push(Route.Feedback) }
-                    )
-                    ArrowPreference(
-                        title = "高级设置",
-                        summary = "设备输入与息屏行为",
-                        onClick = { navigator.push(Route.Advanced) }
-                    )
-                }
-            }
             item { Spacer(modifier = Modifier.height(12.dp)) }
         }
     }
 }
 
 @Composable
-private fun AppNavigationBar(route: Route, navigator: Navigator) {
+private fun AppNavigationBar(page: Int, mainPagerState: MainPagerState) {
     NavigationBar {
         NavigationBarItem(
-            selected = route is Route.Home,
-            onClick = { navigator.replace(Route.Home) },
+            selected = page == PAGE_HOME,
+            onClick = { mainPagerState.animateToPage(PAGE_HOME) },
             icon = MiuixIcons.Home,
             label = "首页"
         )
         NavigationBarItem(
-            selected = route is Route.Other,
-            onClick = { navigator.replace(Route.Other) },
+            selected = page == PAGE_SETTINGS,
+            onClick = { mainPagerState.animateToPage(PAGE_SETTINGS) },
             icon = MiuixIcons.Settings,
-            label = "其他"
+            label = "设置"
         )
         NavigationBarItem(
-            selected = route is Route.About,
-            onClick = { navigator.replace(Route.About) },
-            icon = MiuixIcons.More,
+            selected = page == PAGE_ABOUT,
+            onClick = { mainPagerState.animateToPage(PAGE_ABOUT) },
+            icon = MiuixIcons.Info,
             label = "关于"
         )
     }
@@ -840,10 +881,11 @@ private fun FeedbackPage(
     }
 }
 
-// ---------------------------------------------------------------- 其他
+// ---------------------------------------------------------------- 设置
 
 @Composable
-private fun OtherPage(
+private fun SettingsContent(
+    padding: PaddingValues,
     settings: AppSettings,
     persist: (AppSettings) -> Unit,
     navigator: Navigator
@@ -852,24 +894,36 @@ private fun OtherPage(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = "其他",
-                largeTitle = "其他",
+                title = "设置",
+                largeTitle = "设置",
                 scrollBehavior = scrollBehavior
             )
-        },
-        bottomBar = {
-            AppNavigationBar(route = Route.Other, navigator = navigator)
         }
-    ) { padding ->
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             contentPadding = PaddingValues(
-                top = padding.calculateTopPadding(),
+                top = innerPadding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
             )
         ) {
+            item { SmallTitle(text = "功能设置") }
+            item {
+                Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+                    ArrowPreference(
+                        title = "振动与提示",
+                        summary = "配置触发振动和 Toast 提示",
+                        onClick = { navigator.push(Route.Feedback) }
+                    )
+                    ArrowPreference(
+                        title = "高级设置",
+                        summary = "设备输入与息屏行为",
+                        onClick = { navigator.push(Route.Advanced) }
+                    )
+                }
+            }
             item { SmallTitle(text = "输入法光标") }
             item {
                 Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
@@ -1018,7 +1072,7 @@ private fun AdvancedPage(
 // ---------------------------------------------------------------- 关于
 
 @Composable
-private fun AboutPage(navigator: Navigator) {
+private fun AboutContent(padding: PaddingValues) {
     val context = LocalContext.current
     val scrollBehavior = MiuixScrollBehavior()
     Scaffold(
@@ -1028,17 +1082,14 @@ private fun AboutPage(navigator: Navigator) {
                 largeTitle = "关于",
                 scrollBehavior = scrollBehavior
             )
-        },
-        bottomBar = {
-            AppNavigationBar(route = Route.About, navigator = navigator)
         }
-    ) { padding ->
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             contentPadding = PaddingValues(
-                top = padding.calculateTopPadding(),
+                top = innerPadding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
             )
         ) {

@@ -6,14 +6,9 @@ import top.yukonga.miuix.kmp.nav.core.NavKey
 /** 页面键：每个目的地都是一个 NavKey，可被 miuix-nav 的返回栈保存与恢复。 */
 @Serializable
 sealed interface Route : NavKey {
+    /** 底部导航的容器页，内部用 HorizontalPager 承载 首页 / 设置 / 关于 三个分页。 */
     @Serializable
-    data object Home : Route
-
-    @Serializable
-    data object Other : Route
-
-    @Serializable
-    data object About : Route
+    data object Main : Route
 
     @Serializable
     data object Morse : Route
