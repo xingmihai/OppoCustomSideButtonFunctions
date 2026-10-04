@@ -13,14 +13,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.captionBar
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -68,6 +70,7 @@ import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Home
 import top.yukonga.miuix.kmp.icon.extended.Info
+import top.yukonga.miuix.kmp.icon.extended.Ok
 import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.overlay.OverlayBottomSheet
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
@@ -82,6 +85,7 @@ import top.yukonga.miuix.kmp.nav.core.NavDisplay
 import top.yukonga.miuix.kmp.nav.core.rememberNavBackStack
 import top.yukonga.miuix.kmp.nav.transition.NavTransitions
 import top.yukonga.miuix.kmp.utils.PagerNavigationSpringSpec
+import top.yukonga.miuix.kmp.utils.overScrollVertical
 
 private val AppKeyColor = Color(0xFF347FE8)
 
@@ -571,6 +575,7 @@ private fun MorsePage(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     var editing by remember { mutableStateOf<MorseBinding?>(null) }
+    var editorVisible by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<MorseBinding?>(null) }
 
     Scaffold(
@@ -584,7 +589,10 @@ private fun MorsePage(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { editing = MorseBinding("", ActionType.FLASHLIGHT) }) {
+                    IconButton(onClick = {
+                        editing = MorseBinding("", ActionType.FLASHLIGHT)
+                        editorVisible = true
+                    }) {
                         Icon(MiuixIcons.Add, contentDescription = "添加指令")
                     }
                 },
@@ -614,7 +622,10 @@ private fun MorsePage(
                             ArrowPreference(
                                 title = morseSequenceTitle(binding.sequence),
                                 summary = actionTitle(binding.action, binding.custom),
-                                onClick = { editing = binding }
+                                onClick = {
+                                    editing = binding
+                                    editorVisible = true
+                                }
                             )
                         }
                     }
@@ -677,17 +688,24 @@ private fun MorsePage(
         val target = editing
         if (target != null) {
             MorseBindingSheet(
+                show = editorVisible,
                 binding = target,
                 existing = settings.morseBindings.filter { it.sequence != target.sequence },
-                onDismiss = { editing = null },
-                onDelete = if (target.sequence.isEmpty()) null else ({ pendingDelete = target }),
+                onDismissRequest = { editorVisible = false },
+                onDismissFinished = { editing = null },
+                onDelete = if (target.sequence.isEmpty()) null else {
+                    {
+                        editorVisible = false
+                        pendingDelete = target
+                    }
+                },
                 onConfirm = { next ->
                     val updated = settings.morseBindings
                         .filter { it.sequence != target.sequence }
                         .plus(next)
                         .distinctBy { it.sequence }
                     persist(settings.copy(morseBindings = updated))
-                    editing = null
+                    editorVisible = false
                 }
             )
         }
@@ -724,9 +742,11 @@ private fun MorsePage(
 
 @Composable
 private fun MorseBindingSheet(
+    show: Boolean,
     binding: MorseBinding,
     existing: List<MorseBinding>,
-    onDismiss: () -> Unit,
+    onDismissRequest: () -> Unit,
+    onDismissFinished: () -> Unit,
     onDelete: (() -> Unit)?,
     onConfirm: (MorseBinding) -> Unit
 ) {
@@ -757,55 +777,93 @@ private fun MorseBindingSheet(
     }
 
     OverlayBottomSheet(
-        show = true,
+        show = show,
         title = if (binding.sequence.isEmpty()) "添加指令" else "编辑指令",
+        onDismissRequest = onDismissRequest,
+        onDismissFinished = onDismissFinished,
         startAction = if (onDelete == null) null else {
             {
                 IconButton(onClick = onDelete) {
-                    Icon(MiuixIcons.Delete, contentDescription = "删除指令")
+                    Icon(
+                        imageVector = MiuixIcons.Delete,
+                        contentDescription = "删除指令",
+                        tint = MiuixTheme.colorScheme.onBackground
+                    )
                 }
             }
         },
         endAction = {
-            TextButton(text = "保存", onClick = ::confirm)
-        },
-        onDismissRequest = onDismiss
+            IconButton(onClick = ::confirm) {
+                Icon(
+                    imageVector = MiuixIcons.Ok,
+                    contentDescription = "保存",
+                    tint = MiuixTheme.colorScheme.onBackground
+                )
+            }
+        }
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .overScrollVertical()
         ) {
-            Text(
-                text = "序列：${morseSequenceTitle(sequence)}",
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            TextButton(
-                text = "短按（0）",
-                onClick = { sequence += "0" },
-                modifier = Modifier.fillMaxWidth()
-            )
-            TextButton(
-                text = "长按（1）",
-                onClick = { sequence += "1" },
-                modifier = Modifier.fillMaxWidth()
-            )
-            TextButton(
-                text = "退格",
-                onClick = { if (sequence.isNotEmpty()) sequence = sequence.dropLast(1) },
-                modifier = Modifier.fillMaxWidth()
-            )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            OverlaySpinnerPreference(
-                title = "执行的功能",
-                items = morseActionChoices.map { DropdownItem(text = it.title) },
-                selectedIndex = actionIndex,
-                onSelectedIndexChange = { actionIndex = it }
-            )
-            error?.let {
-                Text(text = it, modifier = Modifier.padding(vertical = 8.dp))
+            item {
+                SmallTitle(text = "序列")
+                Card(modifier = Modifier.padding(bottom = 12.dp)) {
+                    Text(
+                        text = morseSequenceTitle(sequence),
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            item {
+                SmallTitle(text = "输入")
+                Card(modifier = Modifier.padding(bottom = 12.dp)) {
+                    TextButton(
+                        text = "短按（0）",
+                        onClick = { sequence += "0" },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    TextButton(
+                        text = "长按（1）",
+                        onClick = { sequence += "1" },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    TextButton(
+                        text = "退格",
+                        onClick = { if (sequence.isNotEmpty()) sequence = sequence.dropLast(1) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+            item {
+                SmallTitle(text = "动作")
+                Card(modifier = Modifier.padding(bottom = 12.dp)) {
+                    OverlaySpinnerPreference(
+                        title = "执行的功能",
+                        items = morseActionChoices.map { DropdownItem(text = it.title) },
+                        selectedIndex = actionIndex,
+                        onSelectedIndexChange = { actionIndex = it }
+                    )
+                }
+            }
+            if (error != null) {
+                item {
+                    Text(
+                        text = error!!,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+            }
+            item {
+                Spacer(
+                    Modifier.padding(
+                        bottom = WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding() +
+                            WindowInsets.captionBar.asPaddingValues().calculateBottomPadding()
+                    )
+                )
+            }
         }
     }
 }
