@@ -79,8 +79,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.auto(Color.Transparent, Color.Transparent) { false },
-            navigationBarStyle = SystemBarStyle.auto(Color.Transparent, Color.Transparent) { false }
+            statusBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT) { false },
+            navigationBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT) { false }
         )
         // Xiaomi moment, this code must be here
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

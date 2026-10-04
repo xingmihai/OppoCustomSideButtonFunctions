@@ -167,14 +167,17 @@ internal class ActionExecutor {
         }
         if (internal != null) {
             runCatching {
-                val args = internal.parameterTypes.mapIndexed<Any?> { index, type ->
-                    when {
-                        type == Int::class.javaPrimitiveType -> mode
-                        type == String::class.java -> if (index == 1) "customsidebuttonfunctions" else "side_key"
-                        type == Boolean::class.javaPrimitiveType -> false
-                        else -> null
-                    }
-                }.toTypedArray()
+                val args = ArrayList<Any?>()
+                for ((index, type) in internal.parameterTypes.withIndex()) {
+                    args.add(
+                        when {
+                            type == Int::class.javaPrimitiveType -> mode
+                            type == String::class.java -> if (index == 1) "customsidebuttonfunctions" else "side_key"
+                            type == Boolean::class.javaPrimitiveType -> java.lang.Boolean.FALSE
+                            else -> null
+                        }
+                    )
+                }
                 internal.isAccessible = true
                 internal.invoke(audio, *args)
             }.onXposedFailure("set internal ringer mode").onSuccess { return }
