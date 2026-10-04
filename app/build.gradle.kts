@@ -80,6 +80,7 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-preference:0.9.4")
     implementation("top.yukonga.miuix.kmp:miuix-icons:0.9.4")
     implementation("top.yukonga.miuix.kmp:miuix-nav:0.9.4")
+    implementation("top.yukonga.miuix.kmp:miuix-blur:0.9.4")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     // Xposed/LSPosed supplies these classes at runtime; they must not be packaged in the APK.

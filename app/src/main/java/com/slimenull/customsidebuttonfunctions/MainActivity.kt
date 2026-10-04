@@ -7,7 +7,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -36,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -50,13 +54,19 @@ import com.slimenull.customsidebuttonfunctions.model.CustomActionSettings
 import com.slimenull.customsidebuttonfunctions.model.MorseBinding
 import com.slimenull.customsidebuttonfunctions.model.OperationMode
 import com.slimenull.customsidebuttonfunctions.ui.GestureKind
+import com.slimenull.customsidebuttonfunctions.ui.FloatingBarAlignment
 import com.slimenull.customsidebuttonfunctions.ui.MainPagerState
 import com.slimenull.customsidebuttonfunctions.ui.Navigator
 import com.slimenull.customsidebuttonfunctions.ui.Route
+import com.slimenull.customsidebuttonfunctions.ui.UiSettings
+import com.slimenull.customsidebuttonfunctions.ui.UiSettingsStore
 import com.slimenull.customsidebuttonfunctions.ui.rememberMainPagerState
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownItem
+import top.yukonga.miuix.kmp.basic.FloatingNavigationBar
+import top.yukonga.miuix.kmp.basic.FloatingNavigationBarItem
+import top.yukonga.miuix.kmp.basic.FloatingToolbarDefaults
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -69,6 +79,15 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.blur.BlendColorEntry
+import top.yukonga.miuix.kmp.blur.BlurDefaults
+import top.yukonga.miuix.kmp.blur.LayerBackdrop
+import top.yukonga.miuix.kmp.blur.ProgressiveBlur
+import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
+import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.blur.progressiveTextureBlur
+import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
+import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -80,6 +99,7 @@ import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.overlay.OverlayBottomSheet
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.ArrowPreference
+import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.preference.OverlaySpinnerPreference
 import top.yukonga.miuix.kmp.preference.SliderPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
@@ -121,10 +141,16 @@ fun CustomSideButtonApp() {
         ThemeController(ColorSchemeMode.MonetSystem, keyColor = AppKeyColor)
     }
     var settings by remember { mutableStateOf(SettingsStore.load(context)) }
+    var uiSettings by remember { mutableStateOf(UiSettingsStore.load(context)) }
 
     fun persist(next: AppSettings) {
         settings = next
         SettingsStore.save(next)
+    }
+
+    fun persistUi(next: UiSettings) {
+        uiSettings = next
+        UiSettingsStore.save(context, next)
     }
 
     MiuixTheme(controller = themeController) {
@@ -140,28 +166,33 @@ fun CustomSideButtonApp() {
                 MainPage(
                     settings = settings,
                     persist = ::persist,
-                    navigator = navigator
+                    navigator = navigator,
+                    ui = uiSettings,
+                    persistUi = ::persistUi
                 )
             }
             entry<Route.Morse> {
                 MorsePage(
                     settings = settings,
                     persist = ::persist,
-                    navigator = navigator
+                    navigator = navigator,
+                    ui = uiSettings
                 )
             }
             entry<Route.Feedback> {
                 FeedbackPage(
                     settings = settings,
                     persist = ::persist,
-                    navigator = navigator
+                    navigator = navigator,
+                    ui = uiSettings
                 )
             }
             entry<Route.Advanced> {
                 AdvancedPage(
                     settings = settings,
                     persist = ::persist,
-                    navigator = navigator
+                    navigator = navigator,
+                    ui = uiSettings
                 )
             }
             entry<Route.Gesture> { route ->
@@ -169,7 +200,8 @@ fun CustomSideButtonApp() {
                     kind = route.kind,
                     settings = settings,
                     persist = ::persist,
-                    navigator = navigator
+                    navigator = navigator,
+                    ui = uiSettings
                 )
             }
         }
@@ -177,6 +209,10 @@ fun CustomSideButtonApp() {
 }
 
 // ---------------------------------------------------------------- 主页面（底部导航 + 分页）
+
+private val BlurStyleOptions = listOf("Gaussian", "Progressive")
+private val FloatingNavigationBarStyleOptions = listOf("Default", "iOS-like")
+private val FloatingNavigationBarPositionOptions = listOf("Center", "Start", "End")
 
 private const val MAIN_PAGE_COUNT = 3
 private const val PAGE_HOME = 0
@@ -187,7 +223,9 @@ private const val PAGE_ABOUT = 2
 private fun MainPage(
     settings: AppSettings,
     persist: (AppSettings) -> Unit,
-    navigator: Navigator
+    navigator: Navigator,
+    ui: UiSettings,
+    persistUi: (UiSettings) -> Unit
 ) {
     val pagerState = rememberPagerState(pageCount = { MAIN_PAGE_COUNT })
     val mainPagerState = rememberMainPagerState(pagerState)
@@ -203,37 +241,60 @@ private fun MainPage(
     val pageNestedScrollConnection =
         PagerDefaults.pageNestedScrollConnection(pagerState, Orientation.Horizontal)
 
+    val backdrop = rememberAppBlurBackdrop(ui)
+    val blurActive = backdrop != null
+
     Scaffold(
         bottomBar = {
-            AppNavigationBar(page = mainPagerState.selectedPage, mainPagerState = mainPagerState)
+            AppNavigationBar(
+                page = mainPagerState.selectedPage,
+                mainPagerState = mainPagerState,
+                ui = ui,
+                backdrop = backdrop
+            )
         }
     ) { padding ->
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            flingBehavior = flingBehavior,
-            pageNestedScrollConnection = pageNestedScrollConnection,
-            verticalAlignment = Alignment.Top,
-            pageContent = { page ->
-                when (page) {
-                    PAGE_SETTINGS -> SettingsContent(
-                        padding = padding,
-                        settings = settings,
-                        persist = persist,
-                        navigator = navigator
-                    )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier)
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                flingBehavior = flingBehavior,
+                pageNestedScrollConnection = pageNestedScrollConnection,
+                verticalAlignment = Alignment.Top,
+                pageContent = { page ->
+                    when (page) {
+                        PAGE_SETTINGS -> SettingsContent(
+                            padding = padding,
+                            settings = settings,
+                            persist = persist,
+                            navigator = navigator,
+                            ui = ui,
+                            persistUi = persistUi,
+                            backdrop = backdrop
+                        )
 
-                    PAGE_ABOUT -> AboutContent(padding = padding)
+                        PAGE_ABOUT -> AboutContent(
+                            padding = padding,
+                            ui = ui,
+                            backdrop = backdrop
+                        )
 
-                    else -> HomeContent(
-                        padding = padding,
-                        settings = settings,
-                        persist = persist,
-                        navigator = navigator
-                    )
+                        else -> HomeContent(
+                            padding = padding,
+                            settings = settings,
+                            persist = persist,
+                            navigator = navigator,
+                            ui = ui,
+                            backdrop = backdrop
+                        )
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
 
@@ -242,23 +303,31 @@ private fun HomeContent(
     padding: PaddingValues,
     settings: AppSettings,
     persist: (AppSettings) -> Unit,
-    navigator: Navigator
+    navigator: Navigator,
+    ui: UiSettings,
+    backdrop: LayerBackdrop?
 ) {
     val scrollBehavior = MiuixScrollBehavior()
+    val blurActive = backdrop != null
+    val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
     Scaffold(
         topBar = {
+            AppBlurredBar(backdrop, blurActive, ui) {
             TopAppBar(
                 title = "侧键功能",
                 largeTitle = "侧键功能",
+                color = barColor,
                 scrollBehavior = scrollBehavior
             )
+            }
         }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxHeight()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .overScrollVertical(),
+                .overScrollVertical()
+                .appBackdrop(backdrop),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -327,27 +396,131 @@ private fun HomeContent(
     }
 }
 
+/** 按官方 rememberBlurBackdrop 的实现：关闭模糊或设备不支持时返回 null。 */
 @Composable
-private fun AppNavigationBar(page: Int, mainPagerState: MainPagerState) {
-    NavigationBar {
-        NavigationBarItem(
-            selected = page == PAGE_HOME,
-            onClick = { mainPagerState.animateToPage(PAGE_HOME) },
-            icon = MiuixIcons.Home,
-            label = "首页"
-        )
-        NavigationBarItem(
-            selected = page == PAGE_SETTINGS,
-            onClick = { mainPagerState.animateToPage(PAGE_SETTINGS) },
-            icon = MiuixIcons.Settings,
-            label = "设置"
-        )
-        NavigationBarItem(
-            selected = page == PAGE_ABOUT,
-            onClick = { mainPagerState.animateToPage(PAGE_ABOUT) },
-            icon = MiuixIcons.Info,
-            label = "关于"
-        )
+private fun rememberAppBlurBackdrop(ui: UiSettings): LayerBackdrop? {
+    if (!ui.enableBlur || !isRuntimeShaderSupported()) return null
+    val surfaceColor = MiuixTheme.colorScheme.surface
+    return rememberLayerBackdrop {
+        drawRect(surfaceColor)
+        drawContent()
+    }
+}
+
+/**
+ * 顶部应用栏的模糊外壳，对应官方 utils/BlurredBar。
+ * [ui.blurStyle] 为 0 时整条栏均匀模糊（Gaussian），为 1 时自上而下渐隐（Progressive）。
+ */
+@Composable
+private fun AppBlurredBar(
+    backdrop: LayerBackdrop?,
+    blurActive: Boolean,
+    ui: UiSettings,
+    content: @Composable () -> Unit
+) {
+    val progressive = ui.blurStyle == 1
+    Box(
+        modifier = if (blurActive && !progressive && backdrop != null) {
+            Modifier.textureBlur(
+                backdrop = backdrop,
+                shape = RectangleShape,
+                blurRadius = 25f,
+                colors = appBarBlurColors()
+            )
+        } else {
+            Modifier
+        }
+    ) {
+        if (blurActive && progressive && backdrop != null) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .progressiveTextureBlur(
+                        backdrop = backdrop,
+                        shape = RectangleShape,
+                        gradient = ProgressiveBlur.Top.copy(curve = 2.2f),
+                        blurRadius = 10f,
+                        colors = appBarBlurColors(progressive = true)
+                    )
+            )
+        }
+        content()
+    }
+}
+
+@Composable
+private fun appBarBlurColors(progressive: Boolean = false) = BlurDefaults.blurColors(
+    blendColors = listOf(
+        BlendColorEntry(color = MiuixTheme.colorScheme.surface.copy(if (progressive) 0.3f else 0.8f))
+    )
+)
+
+/** 页面内容容器：模糊启用时把内容挂到 backdrop 图层上，供顶栏/底栏采样。 */
+private fun Modifier.appBackdrop(backdrop: LayerBackdrop?): Modifier =
+    if (backdrop != null) this.layerBackdrop(backdrop) else this
+
+private val FloatingBarAlignment.horizontal: Alignment.Horizontal
+    get() = when (this) {
+        FloatingBarAlignment.Center -> Alignment.CenterHorizontally
+        FloatingBarAlignment.Start -> Alignment.Start
+        FloatingBarAlignment.End -> Alignment.End
+    }
+
+@Composable
+private fun AppNavigationBar(
+    page: Int,
+    mainPagerState: MainPagerState,
+    ui: UiSettings,
+    backdrop: LayerBackdrop?
+) {
+    val items = listOf(
+        Triple(PAGE_HOME, MiuixIcons.Home, "首页"),
+        Triple(PAGE_SETTINGS, MiuixIcons.Settings, "设置"),
+        Triple(PAGE_ABOUT, MiuixIcons.Info, "关于")
+    )
+
+    if (!ui.useFloatingNavigationBar) {
+        NavigationBar {
+            items.forEach { (index, icon, label) ->
+                NavigationBarItem(
+                    selected = page == index,
+                    onClick = { mainPagerState.animateToPage(index) },
+                    icon = icon,
+                    label = label
+                )
+            }
+        }
+        return
+    }
+
+    val blurActive = backdrop != null
+    val barShape = RoundedCornerShape(FloatingToolbarDefaults.CornerRadius)
+    FloatingNavigationBar(
+        modifier = if (blurActive) {
+            Modifier.textureBlur(
+                backdrop = backdrop!!,
+                shape = barShape,
+                blurRadius = 25f,
+                colors = BlurDefaults.blurColors(
+                    blendColors = listOf(
+                        BlendColorEntry(color = MiuixTheme.colorScheme.surfaceContainer.copy(0.6f))
+                    )
+                )
+            )
+        } else {
+            Modifier
+        },
+        color = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surfaceContainer,
+        horizontalAlignment = FloatingBarAlignment.fromInt(ui.floatingNavigationBarPosition).horizontal
+    ) {
+        items.forEach { (index, icon, label) ->
+            FloatingNavigationBarItem(
+                selected = page == index,
+                onClick = { mainPagerState.animateToPage(index) },
+                icon = icon,
+                label = label
+            )
+        }
     }
 }
 
@@ -370,9 +543,13 @@ private fun GesturePage(
     kind: GestureKind,
     settings: AppSettings,
     persist: (AppSettings) -> Unit,
-    navigator: Navigator
+    navigator: Navigator,
+    ui: UiSettings
 ) {
     val scrollBehavior = MiuixScrollBehavior()
+    val backdrop = rememberAppBlurBackdrop(ui)
+    val blurActive = backdrop != null
+    val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
     val currentAction = when (kind) {
         GestureKind.SINGLE -> settings.singleAction
         GestureKind.DOUBLE -> settings.doubleAction
@@ -406,6 +583,7 @@ private fun GesturePage(
 
     Scaffold(
         topBar = {
+            AppBlurredBar(backdrop, blurActive, ui) {
             TopAppBar(
                 title = kind.title,
                 largeTitle = kind.title,
@@ -414,15 +592,18 @@ private fun GesturePage(
                         Icon(MiuixIcons.Back, contentDescription = "返回")
                     }
                 },
+                color = barColor,
                 scrollBehavior = scrollBehavior
             )
+            }
         }
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxHeight()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .overScrollVertical(),
+                .overScrollVertical()
+                .appBackdrop(backdrop),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -594,9 +775,13 @@ private fun CustomActionFields(
 private fun MorsePage(
     settings: AppSettings,
     persist: (AppSettings) -> Unit,
-    navigator: Navigator
+    navigator: Navigator,
+    ui: UiSettings
 ) {
     val scrollBehavior = MiuixScrollBehavior()
+    val backdrop = rememberAppBlurBackdrop(ui)
+    val blurActive = backdrop != null
+    val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
     var editing by remember { mutableStateOf<MorseBinding?>(null) }
     var editorVisible by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<MorseBinding?>(null) }
@@ -604,6 +789,7 @@ private fun MorsePage(
 
     Scaffold(
         topBar = {
+            AppBlurredBar(backdrop, blurActive, ui) {
             TopAppBar(
                 title = "摩斯电码设置",
                 largeTitle = "摩斯电码设置",
@@ -620,15 +806,18 @@ private fun MorsePage(
                         Icon(MiuixIcons.Add, contentDescription = "添加指令")
                     }
                 },
+                color = barColor,
                 scrollBehavior = scrollBehavior
             )
+            }
         }
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxHeight()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .overScrollVertical(),
+                .overScrollVertical()
+                .appBackdrop(backdrop),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -917,11 +1106,16 @@ private fun morseSequenceTitle(sequence: String): String =
 private fun FeedbackPage(
     settings: AppSettings,
     persist: (AppSettings) -> Unit,
-    navigator: Navigator
+    navigator: Navigator,
+    ui: UiSettings
 ) {
     val scrollBehavior = MiuixScrollBehavior()
+    val backdrop = rememberAppBlurBackdrop(ui)
+    val blurActive = backdrop != null
+    val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
     Scaffold(
         topBar = {
+            AppBlurredBar(backdrop, blurActive, ui) {
             TopAppBar(
                 title = "振动与提示",
                 largeTitle = "振动与提示",
@@ -930,15 +1124,18 @@ private fun FeedbackPage(
                         Icon(MiuixIcons.Back, contentDescription = "返回")
                     }
                 },
+                color = barColor,
                 scrollBehavior = scrollBehavior
             )
+            }
         }
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxHeight()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .overScrollVertical(),
+                .overScrollVertical()
+                .appBackdrop(backdrop),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -1008,23 +1205,32 @@ private fun SettingsContent(
     padding: PaddingValues,
     settings: AppSettings,
     persist: (AppSettings) -> Unit,
-    navigator: Navigator
+    navigator: Navigator,
+    ui: UiSettings,
+    persistUi: (UiSettings) -> Unit,
+    backdrop: LayerBackdrop?
 ) {
     val scrollBehavior = MiuixScrollBehavior()
+    val blurActive = backdrop != null
+    val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
     Scaffold(
         topBar = {
+            AppBlurredBar(backdrop, blurActive, ui) {
             TopAppBar(
                 title = "设置",
                 largeTitle = "设置",
+                color = barColor,
                 scrollBehavior = scrollBehavior
             )
+            }
         }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxHeight()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .overScrollVertical(),
+                .overScrollVertical()
+                .appBackdrop(backdrop),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -1043,6 +1249,56 @@ private fun SettingsContent(
                         summary = "设备输入与息屏行为",
                         onClick = { navigator.push(Route.Advanced) }
                     )
+                }
+            }
+            item { SmallTitle(text = "界面") }
+            item {
+                Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+                    AnimatedVisibility(visible = isRuntimeShaderSupported()) {
+                        SwitchPreference(
+                            title = "启用模糊效果",
+                            summary = "顶栏与底栏透出下方内容",
+                            checked = ui.enableBlur,
+                            onCheckedChange = { persistUi(ui.copy(enableBlur = it)) }
+                        )
+                    }
+                    AnimatedVisibility(visible = ui.enableBlur && isRuntimeShaderSupported()) {
+                        OverlayDropdownPreference(
+                            title = "顶部应用栏模糊样式",
+                            items = BlurStyleOptions,
+                            selectedIndex = ui.blurStyle,
+                            onSelectedIndexChange = { persistUi(ui.copy(blurStyle = it)) }
+                        )
+                    }
+                    Column {
+                        SwitchPreference(
+                            title = "使用悬浮导航栏",
+                            checked = ui.useFloatingNavigationBar,
+                            onCheckedChange = { persistUi(ui.copy(useFloatingNavigationBar = it)) }
+                        )
+                        AnimatedVisibility(visible = ui.useFloatingNavigationBar) {
+                            Column {
+                                OverlayDropdownPreference(
+                                    title = "悬浮导航栏样式",
+                                    items = FloatingNavigationBarStyleOptions,
+                                    selectedIndex = ui.floatingNavigationBarStyle,
+                                    onSelectedIndexChange = {
+                                        persistUi(ui.copy(floatingNavigationBarStyle = it))
+                                    }
+                                )
+                                AnimatedVisibility(visible = ui.floatingNavigationBarStyle == 0) {
+                                    OverlayDropdownPreference(
+                                        title = "悬浮导航栏位置",
+                                        items = FloatingNavigationBarPositionOptions,
+                                        selectedIndex = ui.floatingNavigationBarPosition,
+                                        onSelectedIndexChange = {
+                                            persistUi(ui.copy(floatingNavigationBarPosition = it))
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
             item { SmallTitle(text = "输入法光标") }
@@ -1123,14 +1379,19 @@ private fun SettingsContent(
 private fun AdvancedPage(
     settings: AppSettings,
     persist: (AppSettings) -> Unit,
-    navigator: Navigator
+    navigator: Navigator,
+    ui: UiSettings
 ) {
     val scrollBehavior = MiuixScrollBehavior()
+    val backdrop = rememberAppBlurBackdrop(ui)
+    val blurActive = backdrop != null
+    val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
     var keyCodeText by remember(settings.keyCode) { mutableStateOf(settings.keyCode.toString()) }
     var devicePathText by remember(settings.inputDevicePath) { mutableStateOf(settings.inputDevicePath) }
 
     Scaffold(
         topBar = {
+            AppBlurredBar(backdrop, blurActive, ui) {
             TopAppBar(
                 title = "高级设置",
                 largeTitle = "高级设置",
@@ -1139,15 +1400,18 @@ private fun AdvancedPage(
                         Icon(MiuixIcons.Back, contentDescription = "返回")
                     }
                 },
+                color = barColor,
                 scrollBehavior = scrollBehavior
             )
+            }
         }
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxHeight()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .overScrollVertical(),
+                .overScrollVertical()
+                .appBackdrop(backdrop),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
@@ -1210,23 +1474,33 @@ private fun AdvancedPage(
 // ---------------------------------------------------------------- 关于
 
 @Composable
-private fun AboutContent(padding: PaddingValues) {
+private fun AboutContent(
+    padding: PaddingValues,
+    ui: UiSettings,
+    backdrop: LayerBackdrop?
+) {
     val context = LocalContext.current
     val scrollBehavior = MiuixScrollBehavior()
+    val blurActive = backdrop != null
+    val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
     Scaffold(
         topBar = {
+            AppBlurredBar(backdrop, blurActive, ui) {
             TopAppBar(
                 title = "关于",
                 largeTitle = "关于",
+                color = barColor,
                 scrollBehavior = scrollBehavior
             )
+            }
         }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxHeight()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .overScrollVertical(),
+                .overScrollVertical()
+                .appBackdrop(backdrop),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding()
