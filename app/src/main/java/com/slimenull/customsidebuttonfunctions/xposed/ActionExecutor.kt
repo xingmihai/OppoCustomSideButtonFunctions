@@ -167,7 +167,7 @@ internal class ActionExecutor {
         }
         if (internal != null) {
             runCatching {
-                val args = internal.parameterTypes.mapIndexed { index, type ->
+                val args = internal.parameterTypes.mapIndexed<Any?> { index, type ->
                     when {
                         type == Int::class.javaPrimitiveType -> mode
                         type == String::class.java -> if (index == 1) "customsidebuttonfunctions" else "side_key"
@@ -416,7 +416,7 @@ internal class ActionExecutor {
             } ?: statusBar?.javaClass?.methods?.firstOrNull { it.name == "requestScreenshot" }
                 ?: return@runCatching false
             method.isAccessible = true
-            val arguments = method.parameterTypes.map { type ->
+            val arguments = method.parameterTypes.map<Class<*>, Any?> { type ->
                 when {
                     type == Int::class.javaPrimitiveType -> 0
                     type == Long::class.javaPrimitiveType -> 0L
