@@ -122,7 +122,7 @@ object SettingsStore {
             } ?: return false
             true
         } catch (error: Throwable) {
-            XposedBridge.log("CustomSideButtonFunctions: [diag] snapshotFile write failed: ${error.javaClass.simpleName}: ${error.message}")
+            XposedBridge.log("CustomSideButtonFunctions: snapshot file write failed: ${error.javaClass.simpleName}: ${error.message}")
             false
         }
     }
