@@ -498,7 +498,7 @@ private fun AppNavigationBar(
     FloatingNavigationBar(
         modifier = if (blurActive) {
             Modifier.textureBlur(
-                backdrop = backdrop!!,
+                backdrop = backdrop,
                 shape = barShape,
                 blurRadius = 25f,
                 colors = BlurDefaults.blurColors(
