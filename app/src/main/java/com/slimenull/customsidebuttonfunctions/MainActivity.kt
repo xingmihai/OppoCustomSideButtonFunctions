@@ -19,6 +19,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,9 +65,11 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Back
+import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Home
 import top.yukonga.miuix.kmp.icon.extended.Info
 import top.yukonga.miuix.kmp.icon.extended.Settings
+import top.yukonga.miuix.kmp.overlay.OverlayBottomSheet
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.preference.OverlaySpinnerPreference
@@ -672,10 +676,11 @@ private fun MorsePage(
 
         val target = editing
         if (target != null) {
-            MorseBindingDialog(
+            MorseBindingSheet(
                 binding = target,
                 existing = settings.morseBindings.filter { it.sequence != target.sequence },
                 onDismiss = { editing = null },
+                onDelete = if (target.sequence.isEmpty()) null else ({ pendingDelete = target }),
                 onConfirm = { next ->
                     val updated = settings.morseBindings
                         .filter { it.sequence != target.sequence }
@@ -718,10 +723,11 @@ private fun MorsePage(
 }
 
 @Composable
-private fun MorseBindingDialog(
+private fun MorseBindingSheet(
     binding: MorseBinding,
     existing: List<MorseBinding>,
     onDismiss: () -> Unit,
+    onDelete: (() -> Unit)?,
     onConfirm: (MorseBinding) -> Unit
 ) {
     var sequence by remember { mutableStateOf(binding.sequence) }
@@ -732,12 +738,44 @@ private fun MorseBindingDialog(
     }
     var error by remember { mutableStateOf<String?>(null) }
 
-    OverlayDialog(
-        title = if (binding.sequence.isEmpty()) "添加指令" else "编辑指令",
+    fun confirm() {
+        when {
+            sequence.isEmpty() -> error = "序列不能为空"
+            existing.any { it.sequence == sequence } -> error = "该序列已存在"
+            else -> {
+                val action = morseActionChoices.getOrNull(actionIndex)?.action
+                    ?: ActionType.FLASHLIGHT
+                onConfirm(
+                    MorseBinding(
+                        sequence = sequence,
+                        action = action,
+                        custom = binding.custom
+                    )
+                )
+            }
+        }
+    }
+
+    OverlayBottomSheet(
         show = true,
+        title = if (binding.sequence.isEmpty()) "添加指令" else "编辑指令",
+        startAction = if (onDelete == null) null else {
+            {
+                IconButton(onClick = onDelete) {
+                    Icon(MiuixIcons.Delete, contentDescription = "删除指令")
+                }
+            }
+        },
+        endAction = {
+            TextButton(text = "保存", onClick = ::confirm)
+        },
         onDismissRequest = onDismiss
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ) {
             Text(
                 text = "序列：${morseSequenceTitle(sequence)}",
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -767,32 +805,7 @@ private fun MorseBindingDialog(
             error?.let {
                 Text(text = it, modifier = Modifier.padding(vertical = 8.dp))
             }
-            TextButton(
-                text = "保存",
-                onClick = {
-                    when {
-                        sequence.isEmpty() -> error = "序列不能为空"
-                        existing.any { it.sequence == sequence } -> error = "该序列已存在"
-                        else -> {
-                            val action = morseActionChoices.getOrNull(actionIndex)?.action
-                                ?: ActionType.FLASHLIGHT
-                            onConfirm(
-                                MorseBinding(
-                                    sequence = sequence,
-                                    action = action,
-                                    custom = binding.custom
-                                )
-                            )
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            TextButton(
-                text = "取消",
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
