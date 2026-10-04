@@ -167,16 +167,14 @@ internal class ActionExecutor {
         }
         if (internal != null) {
             runCatching {
-                val args = ArrayList<Any?>()
-                for ((index, type) in internal.parameterTypes.withIndex()) {
-                    args.add(
-                        when {
-                            type == Int::class.javaPrimitiveType -> mode
-                            type == String::class.java -> if (index == 1) "customsidebuttonfunctions" else "side_key"
-                            type == Boolean::class.javaPrimitiveType -> java.lang.Boolean.FALSE
-                            else -> null
-                        }
-                    )
+                val paramTypes = internal.parameterTypes
+                val args: Array<Any?> = Array(paramTypes.size) { index ->
+                    when {
+                        paramTypes[index] == Int::class.javaPrimitiveType -> mode
+                        paramTypes[index] == String::class.java -> if (index == 1) "customsidebuttonfunctions" else "side_key"
+                        paramTypes[index] == Boolean::class.javaPrimitiveType -> java.lang.Boolean.FALSE
+                        else -> null
+                    }
                 }
                 internal.isAccessible = true
                 internal.invoke(audio, *args)
