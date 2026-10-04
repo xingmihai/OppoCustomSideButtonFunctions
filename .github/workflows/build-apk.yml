@@ -29,13 +29,23 @@ jobs:
           java-version: "17"
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept SDK licenses & install platforms
         run: |
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager --install "platform-tools" "platforms;android-37" "build-tools;36.0.0" > /dev/null 2>&1 || true
-          echo "SDK 就绪"
+          if [ -z "$ANDROID_HOME" ]; then export ANDROID_HOME="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"; fi
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          mkdir -p "$ANDROID_HOME"
+          CMDLINE="$ANDROID_HOME/cmdline-tools/latest/bin"
+          if [ ! -x "$CMDLINE/sdkmanager" ]; then
+            echo "安装 cmdline-tools ..."
+            curl -sSL -o /tmp/cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
+            unzip -q -o /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
+            rm -rf "$ANDROID_HOME/cmdline-tools/latest"
+            mkdir -p "$ANDROID_HOME/cmdline-tools"
+            mv /tmp/cmdline-tools/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
+          fi
+          yes | "$CMDLINE/sdkmanager" --licenses > /dev/null 2>&1 || true
+          "$CMDLINE/sdkmanager" --install "platform-tools" "platforms;android-37" "build-tools;36.0.0" 2>&1 | tail -5 || true
+          echo "SDK 就绪: $ANDROID_HOME"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
