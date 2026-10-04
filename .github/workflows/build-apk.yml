@@ -71,10 +71,26 @@ jobs:
           fi
 
       - name: Build Release APK
-        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+        id: build_release
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleRelease --no-daemon --stacktrace 2>&1 | tee build-release.log
+          exit ${PIPESTATUS[0]}
 
       - name: Build Debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon
+        id: build_debug
+        continue-on-error: true
+        run: |
+          ./gradlew :app:assembleDebug --no-daemon 2>&1 | tee build-debug.log
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build-*.log
+          if-no-files-found: warn
 
       - name: Collect APKs
         id: collect
