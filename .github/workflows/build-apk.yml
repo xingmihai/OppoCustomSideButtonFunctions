@@ -161,5 +161,5 @@ jobs:
             echo "APK 无变化，跳过提交"
           else
             git commit -m "chore: update built APK ${{ steps.collect.outputs.version }}"
-            git push origin apk
+            git push --force origin apk
           fi
