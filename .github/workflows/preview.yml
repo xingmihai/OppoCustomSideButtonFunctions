@@ -81,7 +81,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          OLD_TAG=$(git tag --list | grep -E '^preview-' | head -n 1)
+          OLD_TAG=$(git tag --list | grep -E '^preview-' | head -n 1 || true)
           if [ -n "$OLD_TAG" ]; then
             gh release delete "$OLD_TAG" --yes || echo "没有可删除的预览 Release"
             git push origin --delete "$OLD_TAG" || echo "没有可删除的预览标签"
