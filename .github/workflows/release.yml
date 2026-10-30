@@ -112,6 +112,16 @@ jobs:
           if [ -n "$APKSIGNER" ]; then
             "$APKSIGNER" verify --print-certs "CustomSideButtonFunctions-$VERSION_NAME.apk" | head -6
           fi
+          # 混淆后必须仍然存在的关键入口
+          APK_FILE="CustomSideButtonFunctions-$VERSION_NAME.apk"
+          unzip -l "$APK_FILE" | grep -q "META-INF/xposed/java_init.list" \
+            || { echo "::error::Xposed 入口清单丢失"; exit 1; }
+          for DEX in $(unzip -Z1 "$APK_FILE" 'classes*.dex'); do
+            unzip -p "$APK_FILE" "$DEX" | strings | grep -q "ShizukuShellUserService" && FOUND_SHIZUKU=1
+            unzip -p "$APK_FILE" "$DEX" | strings | grep -q "xposed/XposedEntry" && FOUND_ENTRY=1
+          done
+          [ -n "$FOUND_SHIZUKU" ] || { echo "::error::Shizuku UserService 被移除"; exit 1; }
+          [ -n "$FOUND_ENTRY" ] || { echo "::error::XposedEntry 被移除"; exit 1; }
         id: apk
 
       - name: 上传构建产物
