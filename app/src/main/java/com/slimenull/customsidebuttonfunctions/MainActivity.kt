@@ -155,6 +155,7 @@ import com.slimenull.customsidebuttonfunctions.model.CommonAction
 import com.slimenull.customsidebuttonfunctions.model.CustomActionSettings
 import com.slimenull.customsidebuttonfunctions.model.CursorControlMode
 import com.slimenull.customsidebuttonfunctions.model.DeviceConfig
+import com.slimenull.customsidebuttonfunctions.model.DeviceDiagnostics
 import com.slimenull.customsidebuttonfunctions.model.CursorLongPressAction
 import com.slimenull.customsidebuttonfunctions.model.MAX_CURSOR_LONG_PRESS_MS
 import com.slimenull.customsidebuttonfunctions.model.MAX_CURSOR_REPEAT_INTERVAL_MS
