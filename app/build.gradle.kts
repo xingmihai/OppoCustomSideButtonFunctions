@@ -10,6 +10,47 @@ val signingProperties = Properties().apply {
     if (propertiesFile.isFile) propertiesFile.inputStream().use(::load)
 }
 
+// 版本号由 git 推导，无需每次发版手动修改：
+//   versionCode = 提交总数（单调递增）
+//   versionName = 最近一个 v* 标签，落后则追加 +N，无标签则回退 0.1.<提交数>
+// 注意：浅克隆会算错提交数，CI 里 checkout 必须带 fetch-depth: 0。
+val providerFactory = providers
+fun gitOutput(vararg args: String): String? = runCatching {
+    val result = providerFactory.exec {
+        commandLine("git", *args)
+        isIgnoreExitValue = true
+    }
+    if (result.result.get().exitValue == 0) {
+        result.standardOutput.asText.get().trim().takeIf { it.isNotBlank() }
+    } else {
+        null
+    }
+}.getOrNull()
+
+// 取不到 git 信息时（例如直接下载源码压缩包构建）的兜底值
+val fallbackVersionCode = 11
+
+val commitCount = gitOutput("rev-list", "--count", "HEAD")?.toIntOrNull()
+    ?: fallbackVersionCode
+val describe = gitOutput("describe", "--tags", "--match", "v*", "--long", "--dirty", "--always")
+
+val resolvedVersionName = run {
+    if (describe == null) return@run "0.1.$commitCount"
+    val dirty = describe.endsWith("-dirty")
+    val core = describe.removeSuffix("-dirty")
+    val tagged = Regex("""^v?(\d+(?:\.\d+)*)-(\d+)-g[0-9a-f]+$""").matchEntire(core)
+    when {
+        tagged != null -> buildString {
+            append(tagged.groupValues[1])
+            if (tagged.groupValues[2] != "0") append("+${tagged.groupValues[2]}")
+            if (dirty) append("-dirty")
+        }
+        core.matches(Regex("""^v?\d+(?:\.\d+)*$""")) ->
+            core.removePrefix("v") + if (dirty) "-dirty" else ""
+        else -> "0.1.$commitCount" + if (dirty) "-dirty" else ""
+    }
+}
+
 android {
     namespace = "com.slimenull.customsidebuttonfunctions"
     compileSdk = 37
@@ -18,8 +59,8 @@ android {
         applicationId = "com.slimenull.customsidebuttonfunctions"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "1.0.11"
+        versionCode = commitCount
+        versionName = resolvedVersionName
     }
 
     signingConfigs {
@@ -82,4 +123,12 @@ dependencies {
     // Shizuku is used from the application process before falling back to the existing su path.
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")
+}
+
+// 供 CI 读取真实版本号，避免在工作流里重复推演一遍
+tasks.register("printVersionInfo") {
+    doLast {
+        println("VERSION_NAME=$resolvedVersionName")
+        println("VERSION_CODE=$commitCount")
+    }
 }
