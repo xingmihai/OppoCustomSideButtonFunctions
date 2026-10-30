@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CURR_TAG="$1"
-PREV_TAG=$(git tag --list | grep -E '^v[0-9]+(\.[0-9]+)*$' | sort -Vr | head -n 1)
+PREV_TAG=$(git tag --list | grep -E '^v[0-9]+(\.[0-9]+)*$' | sort -Vr | head -n 1 || true)
 
 if [ -z "$PREV_TAG" ]; then
     LOG_RANGE=""
@@ -13,9 +13,9 @@ else
 fi
 
 # shellcheck disable=SC2086
-CHANGELOG_LIST=$(git log $LOG_RANGE --pretty=format:"- %s (%an)" | grep -v '^-\s*Merge' | head -n 5)
+CHANGELOG_LIST=$(git log $LOG_RANGE --pretty=format:"- %s (%an)" | grep -v '^-\s*Merge' | head -n 5 || true)
 # shellcheck disable=SC2086
-CHANGELOG_COUNT=$(git log $LOG_RANGE --pretty=format:"- %s (%an)" | grep -v '^-\s*Merge' | wc -l)
+CHANGELOG_COUNT=$(git log $LOG_RANGE --pretty=format:"- %s (%an)" | grep -v '^-\s*Merge' | wc -l || true)
 
 {
     echo "body<<CHANGELOG_EOF"
