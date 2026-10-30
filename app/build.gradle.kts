@@ -32,22 +32,17 @@ val fallbackVersionCode = 11
 
 val commitCount = gitOutput("rev-list", "--count", "HEAD")?.toIntOrNull()
     ?: fallbackVersionCode
-val describe = gitOutput("describe", "--tags", "--match", "v*", "--long", "--dirty", "--always")
+// 不带 --dirty：CI 中恢复签名文件会让工作区变“脏”，版本号不该因此带上脏标记
+val describe = gitOutput("describe", "--tags", "--match", "v*", "--long", "--always")
 
 val resolvedVersionName = run {
     if (describe == null) return@run "0.1.$commitCount"
-    val dirty = describe.endsWith("-dirty")
-    val core = describe.removeSuffix("-dirty")
-    val tagged = Regex("""^v?(\d+(?:\.\d+)*)-(\d+)-g[0-9a-f]+$""").matchEntire(core)
+    val tagged = Regex("""^v?(\d+(?:\.\d+)*)-(\d+)-g[0-9a-f]+$""").matchEntire(describe)
     when {
-        tagged != null -> buildString {
-            append(tagged.groupValues[1])
-            if (tagged.groupValues[2] != "0") append("+${tagged.groupValues[2]}")
-            if (dirty) append("-dirty")
-        }
-        core.matches(Regex("""^v?\d+(?:\.\d+)*$""")) ->
-            core.removePrefix("v") + if (dirty) "-dirty" else ""
-        else -> "0.1.$commitCount" + if (dirty) "-dirty" else ""
+        tagged != null -> tagged.groupValues[1] +
+            if (tagged.groupValues[2] != "0") "+${tagged.groupValues[2]}" else ""
+        describe.matches(Regex("""^v?\d+(?:\.\d+)*$""")) -> describe.removePrefix("v")
+        else -> "0.1.$commitCount"
     }
 }
 
