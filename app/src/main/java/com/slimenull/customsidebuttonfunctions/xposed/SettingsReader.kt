@@ -46,16 +46,20 @@ internal object SettingsReader {
         }
     }
 
-    fun peekKeyCode(): Int = DeviceConfig.SIDE_KEY_CODE
+    /** 回退读取路径用的是内核码，对应 KeyEvent.scanCode。 */
+    fun peekKeyCode(): Int = DeviceConfig.SIDE_KEY_SCANCODE
 
-    /** Vendor buttons often expose the Linux BTN_TRIGGER_HAPPY value as scanCode, not keyCode. */
+    /**
+     * 侧键事件有两层编号：框架层 keyCode 与内核层 scanCode。
+     * 本机实测两者不同（780 / 735），任一命中即认为匹配。
+     */
     fun matches(event: KeyEvent): Boolean {
         return matches(event, load())
     }
 
     fun matches(event: KeyEvent, settings: AppSettings): Boolean {
         // 按键码已按本机实测固化，settings 保留参数仅为兼容既有调用
-        return event.keyCode == DeviceConfig.SIDE_KEY_CODE ||
-            event.scanCode == DeviceConfig.SIDE_KEY_CODE
+        return event.keyCode == DeviceConfig.SIDE_KEY_KEYCODE ||
+            event.scanCode == DeviceConfig.SIDE_KEY_SCANCODE
     }
 }

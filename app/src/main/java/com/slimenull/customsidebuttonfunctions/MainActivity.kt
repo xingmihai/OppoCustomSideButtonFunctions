@@ -1528,7 +1528,15 @@ private fun AdvancedScreen(settings: AppSettings, persist: (AppSettings) -> Unit
           item {
             Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    DiagnosticsLine(stringResource(R.string.advanced_key_code), DeviceConfig.SIDE_KEY_CODE.toString())
+                    DiagnosticsLine(
+                        stringResource(R.string.advanced_key_code),
+                        "${DeviceConfig.SIDE_KEY_KEYCODE}（框架层）"
+                    )
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    DiagnosticsLine(
+                        stringResource(R.string.advanced_scan_code),
+                        "${DeviceConfig.SIDE_KEY_SCANCODE}（内核层）"
+                    )
                     HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
                     DiagnosticsLine(stringResource(R.string.advanced_device_path), "gpio-keys (BTN_TRIGGER_HAPPY32)")
                 }
@@ -1611,7 +1619,7 @@ private fun DiagnosticsScreen(
                         }
                         DiagnosticsLine(
                             stringResource(R.string.diagnostics_current_key_code),
-                            "${DeviceConfig.SIDE_KEY_CODE}"
+                            "${DeviceConfig.SIDE_KEY_KEYCODE} / ${DeviceConfig.SIDE_KEY_SCANCODE}"
                         )
                     }
                 }
@@ -1626,7 +1634,7 @@ private fun DiagnosticsScreen(
                     HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
                     DiagnosticsLine(
                         stringResource(R.string.diagnostics_configured_code),
-                        DeviceConfig.SIDE_KEY_CODE.toString()
+                        "keyCode=${DeviceConfig.SIDE_KEY_KEYCODE} scanCode=${DeviceConfig.SIDE_KEY_SCANCODE}"
                     )
                 }
             }
@@ -1643,7 +1651,8 @@ private fun DiagnosticsScreen(
                             append("hook=${info?.hookPath.orEmpty()}\n")
                             append("keyCode=${info?.lastKeyCode}\n")
                             append("scanCode=${info?.lastScanCode}\n")
-                            append("configuredKeyCode=${DeviceConfig.SIDE_KEY_CODE}\n")
+                            append("configuredKeyCode=${DeviceConfig.SIDE_KEY_KEYCODE}\n")
+                            append("configuredScanCode=${DeviceConfig.SIDE_KEY_SCANCODE}\n")
                         }
                         val manager = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                         manager?.setPrimaryClip(ClipData.newPlainText("diagnostics", summary))

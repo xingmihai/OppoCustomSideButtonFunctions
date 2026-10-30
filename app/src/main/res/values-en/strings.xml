@@ -103,6 +103,7 @@
     <string name="advanced_key_event_source">Key Event Source</string>
     <string name="advanced_device_path">Device Path</string>
     <string name="advanced_key_code">Key Code</string>
+    <string name="advanced_scan_code">Scan Code</string>
     <string name="about_app_name">OnePlus Side Key Functions</string>
     <string name="about_app_slogan">Empower your side key to do more</string>
     <string name="about_version">Version %1$s</string>

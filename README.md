@@ -51,7 +51,14 @@
 
 简单模式的双击等待时间和长按等待时间默认均为 300ms，设置范围均为 100~800ms。
 
-“高级设置”可配置按键码、输入设备路径，以及息屏时是否唤醒设备。默认按键码为 `735`、输入路径为 `/dev/input/event0`，息屏唤醒默认关闭。
+“高级设置”可配置息屏时是否唤醒设备（默认关闭）以及 Shell 指令的执行通道。
+
+侧键参数已在本机实测固化并只读展示，不再提供输入项：
+
+- 扫描码 `735`（内核层，`KeyEvent.scanCode`）：来自 `gpio-keys` 上的 `BTN_TRIGGER_HAPPY32`，`BTN_TRIGGER_HAPPY1 = 0x2c0 = 704`，故 `704 + 31 = 735`。由驱动决定，跨 ROM 稳定。
+- 按键码 `780`（框架层，`KeyEvent.keyCode`）：本机 `keylayout` 中查不到 735 的映射，说明 ColorOS 未走标准映射表，而是在框架侧把侧键翻译成了自己的私有值。该值由 ROM 定义，系统升级后可能变化。
+
+匹配逻辑对两者取或。若系统升级后侧键失效，打开底部“其他”页面的“运行诊断”查看实际捕获的值。
 
 底部导航的第二个页面为“关于”，保留开发者信息，并提供 GNU Lesser General Public License v3.0 许可证页面和项目仓库入口：`https://github.com/SlimeNull/OppoCustomSideButtonFunctions`。
 

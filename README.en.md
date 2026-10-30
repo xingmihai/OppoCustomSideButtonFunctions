@@ -55,7 +55,14 @@ Both modes can choose from: ring/vibrate/silent cycle, Do Not Disturb, camera, f
 
 In Simple mode, the double-click wait time and the long-press wait time both default to 300ms, with a range of 100 to 800ms for each.
 
-"Advanced Settings" lets you configure the key code, the input device path, and whether to wake the device when the screen is off. The default key code is `735`, the input path is `/dev/input/event0`, and wake-on-screen-off is off by default.
+"Advanced Settings" lets you configure whether to wake the device when the screen is off (off by default) and the Shell command execution channel.
+
+Side key parameters are measured on-device, hard-coded, and shown read-only:
+
+- Scan code `735` (kernel layer, `KeyEvent.scanCode`): comes from `BTN_TRIGGER_HAPPY32` on `gpio-keys`. `BTN_TRIGGER_HAPPY1 = 0x2c0 = 704`, so `704 + 31 = 735`. Decided by the driver and stable across ROMs.
+- Key code `780` (framework layer, `KeyEvent.keyCode`): no `keylayout` entry for 735 exists on this device, so ColorOS does not use the standard mapping table; it translates the side key into its own private value in the framework. This value is ROM-defined and may change after a system update.
+
+Matching accepts either value. If the side key stops working after a system update, open "Diagnostics" on the "Other" tab to see the values actually captured.
 
 The second page of the bottom navigation is "About", which retains the developer information and provides a GNU Lesser General Public License v3.0 license page and a link to the project repository: `https://github.com/SlimeNull/OppoCustomSideButtonFunctions`.
 

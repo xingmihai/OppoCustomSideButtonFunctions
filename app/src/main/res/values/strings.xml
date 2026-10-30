@@ -208,7 +208,8 @@
     <string name="diagnostics_copy">复制诊断信息</string>
     <string name="diagnostics_refresh">刷新</string>
     <string name="advanced_device_path">来源设备</string>
+    <string name="advanced_scan_code">扫描码</string>
     <string name="advanced_side_key">侧键参数（本机实测固化）</string>
-    <string name="advanced_side_key_hint">按键码 735 来自 gpio-keys 上的 BTN_TRIGGER_HAPPY32，已在本机实测确认并写死。若系统升级后侧键失效，到「运行诊断」查看实际捕获的按键码。</string>
+    <string name="advanced_side_key_hint">两个值都在本机实测确认并写死：735 来自 gpio-keys 上的 BTN_TRIGGER_HAPPY32（内核层，跨 ROM 稳定）；780 是 ColorOS 在框架层翻译后的私有值（keylayout 中查不到 735 的映射），系统升级后可能变化。若升级后侧键失效，到「运行诊断」查看实际捕获的值。</string>
     <string name="diagnostics_configured_code">已固化的按键码</string>
 </resources>
