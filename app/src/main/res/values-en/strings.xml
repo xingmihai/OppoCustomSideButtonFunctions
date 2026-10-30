@@ -101,10 +101,8 @@
     <string name="advanced_wake_screen">Wake screen when off</string>
     <string name="advanced_wake_screen_desc">Turn screen on when executing commands. If disabled, this can also be configured per action.</string>
     <string name="advanced_key_event_source">Key Event Source</string>
-    <string name="advanced_input_device">Input Device</string>
     <string name="advanced_device_path">Device Path</string>
     <string name="advanced_key_code">Key Code</string>
-    <string name="advanced_device_hint">Default path is /dev/input/event0, key code is 735. The module prioritizes Oplus system policy hooks.</string>
     <string name="about_app_name">OnePlus Side Key Functions</string>
     <string name="about_app_slogan">Empower your side key to do more</string>
     <string name="about_version">Version %1$s</string>
