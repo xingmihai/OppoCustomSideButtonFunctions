@@ -190,4 +190,9 @@
     <string name="shell_command_failed">Shell command execution failed</string>
     <string name="shell_notification_channel">Shell Command</string>
     <string name="shell_notification_title">Executing Shell command</string>
+    <string name="theme_mode_title">Theme</string>
+    <string name="theme_mode_desc">Follow system switches with the system dark setting; you can also lock light or dark.</string>
+    <string name="theme_mode_system">System</string>
+    <string name="theme_mode_light">Light</string>
+    <string name="theme_mode_dark">Dark</string>
 </resources>

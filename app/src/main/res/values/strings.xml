@@ -212,4 +212,9 @@
     <string name="advanced_side_key">侧键参数（本机实测固化）</string>
     <string name="advanced_side_key_hint">两个值都在本机实测确认并写死：735 来自 gpio-keys 上的 BTN_TRIGGER_HAPPY32（内核层，跨 ROM 稳定）；780 是 ColorOS 在框架层翻译后的私有值（keylayout 中查不到 735 的映射），系统升级后可能变化。若升级后侧键失效，到「运行诊断」查看实际捕获的值。</string>
     <string name="diagnostics_configured_code">已固化的按键码</string>
+    <string name="theme_mode_title">主题模式</string>
+    <string name="theme_mode_desc">跟随系统会随系统深色开关自动切换；也可固定为浅色或深色。</string>
+    <string name="theme_mode_system">跟随系统</string>
+    <string name="theme_mode_light">浅色</string>
+    <string name="theme_mode_dark">深色</string>
 </resources>

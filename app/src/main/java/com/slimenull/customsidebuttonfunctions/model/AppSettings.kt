@@ -41,7 +41,8 @@ data class AppSettings(
     val combinationVibrationEnabled: Boolean = true,
     val sideVolumeUpAction: SideKeyCombinationAction = SideKeyCombinationAction.NONE,
     val sideVolumeDownAction: SideKeyCombinationAction = SideKeyCombinationAction.NONE,
-    val sidePowerAction: SideKeyCombinationAction = SideKeyCombinationAction.NONE
+    val sidePowerAction: SideKeyCombinationAction = SideKeyCombinationAction.NONE,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM
 ) {
     val hasConfiguredCombination: Boolean
         get() = combinationEnabled && listOf(sideVolumeUpAction, sideVolumeDownAction, sidePowerAction)

@@ -115,8 +115,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -129,6 +132,7 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.draw.clip
@@ -155,6 +159,7 @@ import com.slimenull.customsidebuttonfunctions.model.CommonAction
 import com.slimenull.customsidebuttonfunctions.model.CustomActionSettings
 import com.slimenull.customsidebuttonfunctions.model.CursorControlMode
 import com.slimenull.customsidebuttonfunctions.model.DeviceConfig
+import com.slimenull.customsidebuttonfunctions.model.ThemeMode
 import com.slimenull.customsidebuttonfunctions.model.DeviceDiagnostics
 import com.slimenull.customsidebuttonfunctions.model.CursorLongPressAction
 import com.slimenull.customsidebuttonfunctions.model.MAX_CURSOR_LONG_PRESS_MS
@@ -169,23 +174,67 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.ColumnScope
 
-private val AppBackground = Color(0xFFF3F7FD)
-private val AppBlue = Color(0xFF347FE8)
-private val AppBlueDark = Color(0xFF1954A6)
-private val AppBlueSoft = Color(0xFFE7F1FF)
-private val AppText = Color(0xFF152238)
-private val AppMuted = Color(0xFF718198)
-private val AppGreen = Color(0xFF2DAE78)
+// 主题色板的基准值，供 lightColorScheme / darkColorScheme 定义使用
+private val BaseBackground = Color(0xFFF3F7FD)
+private val BaseBlue = Color(0xFF347FE8)
+private val BaseBlueDark = Color(0xFF1954A6)
+private val BaseBlueSoft = Color(0xFFE7F1FF)
+private val BaseText = Color(0xFF152238)
+private val BaseMuted = Color(0xFF718198)
+
+// 以下颜色改为按当前 ColorScheme 取值，暗色模式生效后无需改动各页面调用处
+private val AppBackground: Color
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.background
+
+private val AppBlue: Color
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.primary
+
+private val AppBlueDark: Color
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.onPrimaryContainer
+
+private val AppBlueSoft: Color
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.primaryContainer
+
+private val AppText: Color
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.onSurface
+
+private val AppMuted: Color
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.onSurfaceVariant
+
+/** 卡片等容器的填充色。 */
+private val AppCardSurface: Color
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.surface
+
+/** 卡片内的分隔线。 */
+private val AppDivider: Color
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.outlineVariant
+
+/** 次级填充面：输入框底色、提示条背景等。 */
+private val AppSubtleSurface: Color
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.surfaceContainerLow
+
+/** 分段按钮未选中态的描边。 */
+private val AppBorderSoft: Color
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.outline
+
+private val AppGreen: Color
+    @Composable @ReadOnlyComposable
+    get() = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
+        Color(0xFF4FD1A5)
+    } else {
+        Color(0xFF2DAE78)
+    }
 private const val PageShadeOpacity = 0.24f
 private const val PageSlideFraction = 0.25f
 private const val PageTransitionDurationMs = 350
-private val AppColors = lightColorScheme(
-    primary = AppBlue,
+private val AppLightColors = lightColorScheme(
+    primary = BaseBlue,
     onPrimary = Color.White,
-    primaryContainer = AppBlueSoft,
-    onPrimaryContainer = AppBlueDark,
+    primaryContainer = BaseBlueSoft,
+    onPrimaryContainer = BaseBlueDark,
     inversePrimary = Color(0xFFB3D1FF),
     secondary = Color(0xFF466A80),
     onSecondary = Color.White,
@@ -195,13 +244,13 @@ private val AppColors = lightColorScheme(
     onTertiary = Color.White,
     tertiaryContainer = Color(0xFFDDF3E9),
     onTertiaryContainer = Color(0xFF17513D),
-    background = AppBackground,
-    onBackground = AppText,
+    background = BaseBackground,
+    onBackground = BaseText,
     surface = Color.White,
-    onSurface = AppText,
+    onSurface = BaseText,
     surfaceVariant = Color(0xFFE9F0F8),
-    onSurfaceVariant = AppMuted,
-    surfaceTint = AppBlue,
+    onSurfaceVariant = BaseMuted,
+    surfaceTint = BaseBlue,
     surfaceBright = Color.White,
     surfaceDim = Color(0xFFE8EEF5),
     surfaceContainerLowest = Color.White,
@@ -209,7 +258,7 @@ private val AppColors = lightColorScheme(
     surfaceContainer = Color(0xFFF8FBFF),
     surfaceContainerHigh = Color(0xFFF1F5FA),
     surfaceContainerHighest = Color(0xFFE8F0F7),
-    inverseSurface = AppText,
+    inverseSurface = BaseText,
     inverseOnSurface = Color.White,
     outline = Color(0xFF889AAF),
     outlineVariant = Color(0xFFD6E1EC),
@@ -219,6 +268,61 @@ private val AppColors = lightColorScheme(
     onErrorContainer = Color(0xFF6D1C22),
     scrim = Color.Black
 )
+
+/** 暗色方案：保持与浅色一致的蓝色主色，其余按 Material 3 暗色规范取值。 */
+private val AppDarkColors = darkColorScheme(
+    primary = Color(0xFF8FBCFF),
+    onPrimary = Color(0xFF062E5C),
+    primaryContainer = Color(0xFF1B3F6E),
+    onPrimaryContainer = Color(0xFFD3E6FF),
+    inversePrimary = BaseBlue,
+    secondary = Color(0xFF9CC9DE),
+    onSecondary = Color(0xFF06303D),
+    secondaryContainer = Color(0xFF1E4757),
+    onSecondaryContainer = Color(0xFFD2EAF5),
+    tertiary = Color(0xFF7BD3AC),
+    onTertiary = Color(0xFF08372A),
+    tertiaryContainer = Color(0xFF1D5040),
+    onTertiaryContainer = Color(0xFFCDEEDF),
+    background = Color(0xFF0F151C),
+    onBackground = Color(0xFFE2E8F0),
+    surface = Color(0xFF161D26),
+    onSurface = Color(0xFFE2E8F0),
+    surfaceVariant = Color(0xFF232C38),
+    onSurfaceVariant = Color(0xFFA8B6C6),
+    surfaceTint = Color(0xFF8FBCFF),
+    surfaceBright = Color(0xFF2A333F),
+    surfaceDim = Color(0xFF0F151C),
+    surfaceContainerLowest = Color(0xFF0B1016),
+    surfaceContainerLow = Color(0xFF161D26),
+    surfaceContainer = Color(0xFF1B232D),
+    surfaceContainerHigh = Color(0xFF212933),
+    surfaceContainerHighest = Color(0xFF28313C),
+    inverseSurface = Color(0xFFE2E8F0),
+    inverseOnSurface = Color(0xFF152238),
+    outline = Color(0xFF6E7F91),
+    outlineVariant = Color(0xFF2E3946),
+    error = Color(0xFFFF9E9E),
+    onError = Color(0xFF5A1013),
+    errorContainer = Color(0xFF6D1C22),
+    onErrorContainer = Color(0xFFFDE8E8),
+    scrim = Color.Black
+)
+
+/** 按设置决定当前生效的配色方案。 */
+@Composable
+private fun appColorScheme(mode: ThemeMode): ColorScheme = when (mode) {
+    ThemeMode.LIGHT -> AppLightColors
+    ThemeMode.DARK -> AppDarkColors
+    ThemeMode.SYSTEM -> if (isSystemInDarkTheme()) AppDarkColors else AppLightColors
+}
+
+@StringRes
+private fun themeLabelRes(mode: ThemeMode): Int = when (mode) {
+    ThemeMode.SYSTEM -> R.string.theme_mode_system
+    ThemeMode.LIGHT -> R.string.theme_mode_light
+    ThemeMode.DARK -> R.string.theme_mode_dark
+}
 
 private data class ActivityPreset(
     @get:StringRes val titleRes: Int,
@@ -410,7 +514,7 @@ private fun CustomSideButtonApp() {
         }
     }
 
-    MaterialTheme(colorScheme = AppColors) {
+    MaterialTheme(colorScheme = appColorScheme(settings.themeMode)) {
         Scaffold(
             containerColor = AppBackground
         ) { padding ->
@@ -529,7 +633,7 @@ private fun PrimaryPageLayer(
                 )
             }
         }
-        NavigationBar(containerColor = Color.White) {
+        NavigationBar(containerColor = AppCardSurface) {
             NavigationBarItem(
                 selected = selectedTab == BottomTab.HOME,
                 onClick = { onTabSelected(BottomTab.HOME) },
@@ -611,7 +715,7 @@ private fun HomeScreen(
             item {
                 Card(
                     shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                    colors = CardDefaults.cardColors(containerColor = AppCardSurface)
                 ) {
                     Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                         IconBadge(Icons.Default.Tune)
@@ -630,9 +734,9 @@ private fun HomeScreen(
                     activeContainerColor = AppBlueSoft,
                     activeContentColor = AppBlueDark,
                     activeBorderColor = AppBlue,
-                    inactiveContainerColor = Color.White,
+                    inactiveContainerColor = AppCardSurface,
                     inactiveContentColor = AppText,
-                    inactiveBorderColor = Color(0xFF9AAFC6)
+                    inactiveBorderColor = AppBorderSoft
                 )
                 SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                     OperationMode.entries.forEachIndexed { index, mode ->
@@ -690,6 +794,43 @@ private fun HomeScreen(
                 }
             }
             item { SectionLabel(stringResource(R.string.section_other_settings)) }
+            item {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            stringResource(R.string.theme_mode_title),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                            ThemeMode.entries.forEachIndexed { index, mode ->
+                                SegmentedButton(
+                                    selected = settings.themeMode == mode,
+                                    onClick = { clickSound(view); persist(settings.copy(themeMode = mode)) },
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index, ThemeMode.entries.size, baseShape = RoundedCornerShape(8.dp)
+                                    ),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = AppBlueSoft,
+                                        activeContentColor = AppBlueDark,
+                                        activeBorderColor = AppBlue,
+                                        inactiveContainerColor = AppCardSurface,
+                                        inactiveContentColor = AppText,
+                                        inactiveBorderColor = AppBorderSoft
+                                    )
+                                ) {
+                                    Text(stringResource(themeLabelRes(mode)))
+                                }
+                            }
+                        }
+                        Text(
+                            stringResource(R.string.theme_mode_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppMuted
+                        )
+                    }
+                }
+            }
             item {
                 SettingRow(Icons.Default.Vibration, stringResource(R.string.setting_vibration_feedback), stringResource(R.string.setting_vibration_feedback_desc)) { navigate(Route.Feedback) }
             }
@@ -762,7 +903,7 @@ private fun GestureScreen(
           }
           if (kind != GestureKind.SINGLE) {
             item {
-                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                     Column(Modifier.padding(14.dp)) {
                         Text(stringResource(if (kind == GestureKind.DOUBLE) R.string.gesture_wait_time else R.string.gesture_press_duration), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -826,13 +967,13 @@ private fun GestureScreen(
           }
           item { SectionLabel(stringResource(R.string.section_options)) }
           item {
-            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.padding(14.dp)) {
                     SettingSwitchRow(stringResource(R.string.option_wake_screen), null, currentWakeScreen) {
                         persist(updateWakeScreen(kind, settings, it))
                     }
                     if (!settings.vibrationEnabled) {
-                        HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                        HorizontalDivider(Modifier.padding(vertical = 8.dp), color = AppDivider)
                         SettingSwitchRow(stringResource(R.string.option_vibrate_on_trigger), null, currentVibration) {
                             persist(updateVibration(kind, settings, it))
                         }
@@ -881,7 +1022,7 @@ private fun MorseScreen(
                 item { Text(stringResource(R.string.morse_no_commands), color = AppMuted, modifier = Modifier.padding(vertical = 16.dp)) }
             }
             items(settings.morseBindings, key = { it.sequence }) { binding ->
-                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                     Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f).clickable {
                             clickSound(view)
@@ -905,12 +1046,12 @@ private fun MorseScreen(
             }
             item { SectionLabel(stringResource(R.string.morse_key_settings)) }
             item {
-                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                     Column(Modifier.padding(14.dp)) {
                         SettingSwitchRow(stringResource(R.string.morse_vibrate_on_press), null, settings.morsePressVibrationEnabled) {
                             persist(settings.copy(morsePressVibrationEnabled = it))
                         }
-                        HorizontalDivider(color = Color(0xFFEAF0F7))
+                        HorizontalDivider(color = AppDivider)
                         SettingSwitchRow(
                             stringResource(R.string.morse_vibrate_on_long_press),
                             null,
@@ -918,7 +1059,7 @@ private fun MorseScreen(
                         ) {
                             persist(settings.copy(morseLongVibrationEnabled = it))
                         }
-                        HorizontalDivider(color = Color(0xFFEAF0F7))
+                        HorizontalDivider(color = AppDivider)
                         SettingSwitchRow(
                             stringResource(R.string.morse_immediate_execution),
                             null,
@@ -981,7 +1122,7 @@ private fun MorseTimingCard(title: String, value: Long, onChange: (Long) -> Unit
     var sliderValue by remember(value) {
         mutableFloatStateOf(value.coerceIn(100L, 800L).toFloat())
     }
-    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
         Column(Modifier.padding(14.dp)) {
             Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1137,11 +1278,11 @@ private fun MorseBindingEditorDialog(
                     CustomActionEditor(action, custom) { custom = it }
                 }
                 SectionLabel(stringResource(R.string.section_options))
-                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                     Column(Modifier.padding(14.dp)) {
                         SettingSwitchRow(stringResource(R.string.option_wake_screen), null, wakeScreen) { wakeScreen = it }
                         if (!globalVibrationEnabled) {
-                            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = AppDivider)
                             SettingSwitchRow(
                                 stringResource(R.string.option_vibrate_on_trigger),
                                 null,
@@ -1173,7 +1314,7 @@ private fun FeedbackScreen(settings: AppSettings, persist: (AppSettings) -> Unit
         ) {
           item { SectionLabel(stringResource(R.string.feedback_vibration_settings)) }
           item {
-            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.padding(14.dp)) {
                     SettingSwitchRow(stringResource(R.string.option_vibrate_on_trigger), null, settings.vibrationEnabled) {
                         persist(
@@ -1185,7 +1326,7 @@ private fun FeedbackScreen(settings: AppSettings, persist: (AppSettings) -> Unit
           }
           item { SectionLabel(stringResource(R.string.feedback_toast_notifications)) }
           item {
-            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SettingSwitchRow(stringResource(R.string.feedback_show_toast), null, settings.toastEnabled) {
                         persist(
@@ -1205,7 +1346,7 @@ private fun FeedbackScreen(settings: AppSettings, persist: (AppSettings) -> Unit
           item { InfoCard(stringResource(R.string.feedback_toast_hint)) }
           item { SectionLabel(stringResource(R.string.feedback_unknown_morse_title)) }
           item {
-            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SettingSwitchRow(stringResource(R.string.feedback_unknown_morse_toast_and_vibe), null, settings.unknownMorseFeedbackEnabled) {
                         persist(settings.copy(unknownMorseFeedbackEnabled = it))
@@ -1241,7 +1382,7 @@ private fun OtherScreen(settings: AppSettings, persist: (AppSettings) -> Unit, p
         ) {
             item { SectionLabel(stringResource(R.string.section_key_combinations)) }
             item {
-                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         SettingSwitchRow(
                             title = stringResource(R.string.enable_key_combinations),
@@ -1249,7 +1390,7 @@ private fun OtherScreen(settings: AppSettings, persist: (AppSettings) -> Unit, p
                             checked = settings.combinationEnabled
                         ) { persist(settings.copy(combinationEnabled = it)) }
                         if (settings.combinationEnabled) {
-                            HorizontalDivider(color = Color(0xFFEAF0F7))
+                            HorizontalDivider(color = AppDivider)
                             SideKeyCombinationPicker(stringResource(R.string.combo_side_vol_up), settings.sideVolumeUpAction) {
                                 persist(settings.copy(sideVolumeUpAction = it))
                             }
@@ -1259,7 +1400,7 @@ private fun OtherScreen(settings: AppSettings, persist: (AppSettings) -> Unit, p
                             SideKeyCombinationPicker(stringResource(R.string.combo_side_power), settings.sidePowerAction) {
                                 persist(settings.copy(sidePowerAction = it))
                             }
-                            HorizontalDivider(color = Color(0xFFEAF0F7))
+                            HorizontalDivider(color = AppDivider)
                             SettingSwitchRow(
                                 title = stringResource(R.string.feedback_vibration),
                                 description = stringResource(R.string.feedback_vibrate_on_combo),
@@ -1274,16 +1415,16 @@ private fun OtherScreen(settings: AppSettings, persist: (AppSettings) -> Unit, p
             }
             item { SectionLabel(stringResource(R.string.section_ime_cursor)) }
             item {
-                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(stringResource(R.string.cursor_vol_control), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                         val cursorColors = SegmentedButtonDefaults.colors(
                             activeContainerColor = AppBlueSoft,
                             activeContentColor = AppBlueDark,
                             activeBorderColor = AppBlue,
-                            inactiveContainerColor = Color.White,
+                            inactiveContainerColor = AppCardSurface,
                             inactiveContentColor = AppText,
-                            inactiveBorderColor = Color(0xFF9AAFC6)
+                            inactiveBorderColor = AppBorderSoft
                         )
                         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                             CursorControlMode.entries.forEachIndexed { index, mode ->
@@ -1305,12 +1446,12 @@ private fun OtherScreen(settings: AppSettings, persist: (AppSettings) -> Unit, p
                                 )
                             }
                         }
-                        HorizontalDivider(color = Color(0xFFEAF0F7))
+                        HorizontalDivider(color = AppDivider)
                         CursorLongPressPicker(settings.cursorLongPressAction) {
                             persist(settings.copy(cursorLongPressAction = it))
                         }
                         if (settings.cursorLongPressAction != CursorLongPressAction.NONE) {
-                            HorizontalDivider(color = Color(0xFFEAF0F7))
+                            HorizontalDivider(color = AppDivider)
                             CursorTimingSetting(
                                 title = stringResource(R.string.cursor_long_press_delay),
                                 value = settings.cursorLongPressMs,
@@ -1319,7 +1460,7 @@ private fun OtherScreen(settings: AppSettings, persist: (AppSettings) -> Unit, p
                                 onChange = { persist(settings.copy(cursorLongPressMs = it)) }
                             )
                             if (settings.cursorLongPressAction == CursorLongPressAction.REPEAT) {
-                                HorizontalDivider(color = Color(0xFFEAF0F7))
+                                HorizontalDivider(color = AppDivider)
                                 CursorTimingSetting(
                                     title = stringResource(R.string.cursor_repeat_interval),
                                     value = settings.cursorRepeatIntervalMs,
@@ -1357,7 +1498,7 @@ private fun SideKeyCombinationPicker(
         Box(
             Modifier.fillMaxWidth()
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                .background(Color(0xFFF3F7FC), RoundedCornerShape(10.dp))
+                .background(AppSubtleSurface, RoundedCornerShape(10.dp))
                 .padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -1406,7 +1547,7 @@ private fun CursorLongPressPicker(
         Box(
             Modifier.fillMaxWidth()
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                .background(Color(0xFFF3F7FC), RoundedCornerShape(10.dp))
+                .background(AppSubtleSurface, RoundedCornerShape(10.dp))
                 .padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -1501,14 +1642,14 @@ private fun AdvancedScreen(settings: AppSettings, persist: (AppSettings) -> Unit
         ) {
           item { SectionLabel(stringResource(R.string.advanced_system_behavior)) }
           item {
-            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.padding(14.dp)) {
                     SettingSwitchRow(
                         stringResource(R.string.advanced_prefer_su),
                         stringResource(R.string.advanced_prefer_su_desc),
                         settings.preferSuForShellCommands
                     ) { persist(settings.copy(preferSuForShellCommands = it)) }
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = AppDivider)
                     SettingSwitchRow(
                         stringResource(R.string.advanced_wake_screen),
                         stringResource(R.string.advanced_wake_screen_desc),
@@ -1518,7 +1659,7 @@ private fun AdvancedScreen(settings: AppSettings, persist: (AppSettings) -> Unit
                             settings.copy(wakeScreenWhenOff = it)
                         )
                     }
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = AppDivider)
                     Text(stringResource(R.string.advanced_key_event_source), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                     Text("Oplus StrategyActionButtonKeyLaunchApp", style = MaterialTheme.typography.bodySmall, color = AppMuted)
                 }
@@ -1526,18 +1667,18 @@ private fun AdvancedScreen(settings: AppSettings, persist: (AppSettings) -> Unit
           }
           item { SectionLabel(stringResource(R.string.advanced_side_key)) }
           item {
-            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     DiagnosticsLine(
                         stringResource(R.string.advanced_key_code),
                         "${DeviceConfig.SIDE_KEY_KEYCODE}（框架层）"
                     )
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = AppDivider)
                     DiagnosticsLine(
                         stringResource(R.string.advanced_scan_code),
                         "${DeviceConfig.SIDE_KEY_SCANCODE}（内核层）"
                     )
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = AppDivider)
                     DiagnosticsLine(stringResource(R.string.advanced_device_path), "gpio-keys (BTN_TRIGGER_HAPPY32)")
                 }
             }
@@ -1589,13 +1730,13 @@ private fun DiagnosticsScreen(
                         if (active) stringResource(R.string.diagnostics_module_active)
                         else stringResource(R.string.diagnostics_module_inactive)
                     )
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = AppDivider)
                     DiagnosticsLine(
                         stringResource(R.string.diagnostics_hook_path),
                         info?.hookPath?.takeIf { it.isNotBlank() }
                             ?: stringResource(R.string.diagnostics_hook_unknown)
                     )
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = AppDivider)
                     DiagnosticsLine(
                         stringResource(R.string.diagnostics_event_count),
                         (info?.keyEventCount ?: 0).toString()
@@ -1611,11 +1752,11 @@ private fun DiagnosticsScreen(
                     DiagnosticsCard {
                         info.lastKeyCode?.let {
                             DiagnosticsLine(stringResource(R.string.diagnostics_key_code), it.toString())
-                            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = AppDivider)
                         }
                         info.lastScanCode?.let {
                             DiagnosticsLine(stringResource(R.string.diagnostics_scan_code), it.toString())
-                            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = AppDivider)
                         }
                         DiagnosticsLine(
                             stringResource(R.string.diagnostics_current_key_code),
@@ -1629,9 +1770,9 @@ private fun DiagnosticsScreen(
             item {
                 DiagnosticsCard {
                     DiagnosticsLine(stringResource(R.string.diagnostics_device), "${Build.MANUFACTURER} ${Build.MODEL}")
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = AppDivider)
                     DiagnosticsLine(stringResource(R.string.diagnostics_rom), Build.DISPLAY ?: "")
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = AppDivider)
                     DiagnosticsLine(
                         stringResource(R.string.diagnostics_configured_code),
                         "keyCode=${DeviceConfig.SIDE_KEY_KEYCODE} scanCode=${DeviceConfig.SIDE_KEY_SCANCODE}"
@@ -1666,7 +1807,7 @@ private fun DiagnosticsScreen(
 
 @Composable
 private fun DiagnosticsCard(content: @Composable ColumnScope.() -> Unit) {
-    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
         Column(Modifier.padding(14.dp)) { content() }
     }
 }
@@ -1720,7 +1861,7 @@ private fun AboutScreen(padding: PaddingValues) {
           }
            item {
              Spacer(Modifier.height(22.dp))
-             Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+             Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.fillMaxWidth().padding(14.dp)) {
                      Text(stringResource(R.string.about_developer), style = MaterialTheme.typography.labelMedium, color = AppMuted)
                     Text("SlimeNull Issac", modifier = Modifier.padding(top = 4.dp))
@@ -1793,7 +1934,7 @@ private fun SettingRow(icon: ImageVector, title: String, subtitle: String, onCli
     val view = LocalView.current
     Card(
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = AppCardSurface),
         modifier = Modifier.fillMaxWidth().clip(shape).clickable {
             clickSound(view)
             onClick()
@@ -1813,7 +1954,7 @@ private fun SettingRow(icon: ImageVector, title: String, subtitle: String, onCli
 
 @Composable
 private fun IntroCard(icon: ImageVector, title: String, description: String) {
-    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             IconBadge(icon, size = 48.dp, iconSize = 26.dp)
             Spacer(Modifier.width(12.dp))
@@ -1841,7 +1982,7 @@ private fun ActionPicker(
     ) {
         Card(
             shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = AppCardSurface),
             modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
         ) {
             Row(
@@ -2118,7 +2259,7 @@ private fun CustomActionEditor(
 
 @Composable
 private fun ParameterCard(title: String, content: @Composable () -> Unit) {
-    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
             content()
@@ -2162,7 +2303,7 @@ private fun SectionLabel(text: String) {
 
 @Composable
 private fun InfoCard(text: String) {
-    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFEAF3FF))) {
+    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppSubtleSurface)) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Info, contentDescription = null, tint = AppBlue)
             Spacer(Modifier.width(8.dp))
@@ -2208,8 +2349,8 @@ private fun TimeValueEditor(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF3F7FC), RoundedCornerShape(8.dp))
-                    .border(1.dp, Color(0xFFD6E1EC), RoundedCornerShape(8.dp))
+                    .background(AppSubtleSurface, RoundedCornerShape(8.dp))
+                    .border(1.dp, AppDivider, RoundedCornerShape(8.dp))
                     .padding(horizontal = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

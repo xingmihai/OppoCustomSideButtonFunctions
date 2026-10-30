@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.os.ParcelFileDescriptor
 import com.slimenull.customsidebuttonfunctions.onXposedFailure
 import com.slimenull.customsidebuttonfunctions.xposed.XposedBridge
+import com.slimenull.customsidebuttonfunctions.model.ThemeMode
 import com.slimenull.customsidebuttonfunctions.model.ActionType
 import com.slimenull.customsidebuttonfunctions.model.AppSettings
 import com.slimenull.customsidebuttonfunctions.model.CommonAction
@@ -43,6 +44,7 @@ object SettingsStore {
     private var remoteSyncInitialized = false
 
     private const val KEY_ENABLED = "enabled"
+    private const val KEY_THEME_MODE = "theme_mode"
     private const val KEY_LONG_PRESS_MS = "long_press_ms"
     private const val KEY_DOUBLE_WINDOW_MS = "double_click_window_ms"
     private const val KEY_SINGLE_ACTION = "single_action"
@@ -193,6 +195,7 @@ object SettingsStore {
     private fun writeLocal(context: Context, settings: AppSettings): Boolean = runCatching {
         preferences(context).edit()
             .putBoolean(KEY_ENABLED, settings.enabled)
+            .putString(KEY_THEME_MODE, settings.themeMode.name)
             .putLong(KEY_LONG_PRESS_MS, settings.longPressMs)
             .putLong(KEY_DOUBLE_WINDOW_MS, settings.doubleClickWindowMs)
             .putString(KEY_SINGLE_ACTION, settings.singleAction.name)
@@ -235,6 +238,7 @@ object SettingsStore {
 
     fun fromPreferences(preferences: SharedPreferences): AppSettings = AppSettings(
         enabled = preferences.getBoolean(KEY_ENABLED, true),
+        themeMode = runCatching { ThemeMode.valueOf(preferences.getString(KEY_THEME_MODE, null) ?: ThemeMode.SYSTEM.name) }.getOrDefault(ThemeMode.SYSTEM),
         longPressMs = preferences.getLong(KEY_LONG_PRESS_MS, 300L).coerceIn(100L, 800L),
         doubleClickWindowMs = preferences.getLong(KEY_DOUBLE_WINDOW_MS, 300L).coerceIn(100L, 800L),
         singleAction = action(preferences.getString(KEY_SINGLE_ACTION, null)),
@@ -314,6 +318,7 @@ object SettingsStore {
     /** Serialize the complete settings snapshot used by the LibXposed remote-file bridge. */
     internal fun toJson(settings: AppSettings): JSONObject = JSONObject().apply {
         put(KEY_ENABLED, settings.enabled)
+        put(KEY_THEME_MODE, settings.themeMode.name)
         put(KEY_LONG_PRESS_MS, settings.longPressMs)
         put(KEY_DOUBLE_WINDOW_MS, settings.doubleClickWindowMs)
         put(KEY_SINGLE_ACTION, settings.singleAction.name)
@@ -356,6 +361,7 @@ object SettingsStore {
     /** Deserialize a remote-file snapshot, applying the same bounds and defaults as preferences. */
     internal fun fromJson(json: JSONObject): AppSettings = AppSettings(
         enabled = json.optBoolean(KEY_ENABLED, true),
+        themeMode = runCatching { ThemeMode.valueOf(optionalString(json, KEY_THEME_MODE) ?: ThemeMode.SYSTEM.name) }.getOrDefault(ThemeMode.SYSTEM),
         longPressMs = json.optLong(KEY_LONG_PRESS_MS, 300L).coerceIn(100L, 800L),
         doubleClickWindowMs = json.optLong(KEY_DOUBLE_WINDOW_MS, 300L).coerceIn(100L, 800L),
         singleAction = action(optionalString(json, KEY_SINGLE_ACTION)),
