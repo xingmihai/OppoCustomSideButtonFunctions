@@ -1,5 +1,6 @@
-name: 发版 Release
+name: Stable Release
 
+# 稳定版：手动触发后只生成草稿，确认更新日志再发布
 on:
   push:
     tags:
@@ -7,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 版本号标签，例如 v1.1.0
+        description: 版本号标签，例如 v1.0.12
         required: true
         type: string
       prerelease:
@@ -20,15 +21,15 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: stable-release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   release:
-    name: 构建签名 APK 并发布
+    name: 构建签名 APK 并生成草稿
     runs-on: ubuntu-latest
     steps:
-      # 版本号由 git 推导（提交数 + 最近的 v* 标签），必须拉取完整历史，不能用浅克隆
+      # 版本号由 git 推导（提交数 + 最近的 v* 标签），必须拉取完整历史
       - name: 检出代码
         uses: actions/checkout@v4
         with:
@@ -76,20 +77,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          set -euo pipefail
-          mkdir -p keystore
-          echo "$KEYSTORE_BASE64" | base64 -d > keystore/custom-side-button.jks
-          # Properties 以 ISO-8859-1 读取，中文别名需要写成 Unicode 转义
-          ALIAS=$(python3 -c 'import os;print(os.environ["KEY_ALIAS"].encode("unicode_escape").decode())')
-          {
-            echo "storeFile=keystore/custom-side-button.jks"
-            echo "storePassword=$KEYSTORE_PASSWORD"
-            echo "keyAlias=$ALIAS"
-            echo "keyPassword=$KEY_PASSWORD"
-          } > keystore/keystore.properties
-          keytool -list -keystore keystore/custom-side-button.jks \
-            -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS"
+        run: bash .github/scripts/setup-signing.sh
 
       - name: 构建 Release APK
         run: |
@@ -98,48 +86,44 @@ jobs:
           ./gradlew printVersionInfo --quiet | tee version.txt
 
       - name: 整理并校验产物
-        env:
-          TAG: ${{ steps.version.outputs.tag }}
+        id: apk
         run: |
           set -euo pipefail
           VERSION_NAME=$(sed -n 's/^VERSION_NAME=//p' version.txt | head -1)
-          VERSION_CODE=$(sed -n 's/^VERSION_CODE=//p' version.txt | head -1)
-          echo "versionName=$VERSION_NAME versionCode=$VERSION_CODE"
-          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           APK=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
-          mv "$APK" "CustomSideButtonFunctions-$VERSION_NAME.apk"
-          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | head -1)
-          if [ -n "$APKSIGNER" ]; then
-            "$APKSIGNER" verify --print-certs "CustomSideButtonFunctions-$VERSION_NAME.apk" | head -6
-          fi
-          # 混淆后必须仍然存在的关键入口
-          APK_FILE="CustomSideButtonFunctions-$VERSION_NAME.apk"
-          unzip -l "$APK_FILE" | grep -q "META-INF/xposed/java_init.list" \
-            || { echo "::error::Xposed 入口清单丢失"; exit 1; }
-          for DEX in $(unzip -Z1 "$APK_FILE" 'classes*.dex'); do
-            unzip -p "$APK_FILE" "$DEX" | strings | grep -q "ShizukuShellUserService" && FOUND_SHIZUKU=1
-            unzip -p "$APK_FILE" "$DEX" | strings | grep -q "xposed/XposedEntry" && FOUND_ENTRY=1
-          done
-          [ -n "$FOUND_SHIZUKU" ] || { echo "::error::Shizuku UserService 被移除"; exit 1; }
-          [ -n "$FOUND_ENTRY" ] || { echo "::error::XposedEntry 被移除"; exit 1; }
-        id: apk
+          NEW="CustomSideButtonFunctions-${VERSION_NAME}.apk"
+          mv "$APK" "$NEW"
+          bash .github/scripts/verify-apk.sh "$NEW"
+          echo "file=$NEW" >> "$GITHUB_OUTPUT"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
 
-      - name: 上传构建产物
+      - name: 上传 APK
         uses: actions/upload-artifact@v4
         with:
-          name: CustomSideButtonFunctions-${{ steps.apk.outputs.version_name }}
-          path: CustomSideButtonFunctions-*.apk
+          name: stable-apk-${{ steps.apk.outputs.version_name }}
+          path: ${{ steps.apk.outputs.file }}
+          retention-days: 15
           if-no-files-found: error
 
       - name: 推送标签
         if: github.event_name == 'workflow_dispatch'
         run: git push origin "${{ steps.version.outputs.tag }}"
 
-      - name: 发布 Release
+      - name: 生成草稿 Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: ${{ steps.version.outputs.tag }} (${{ steps.apk.outputs.version_name }})
-          files: CustomSideButtonFunctions-*.apk
+          name: 侧键功能 ${{ steps.apk.outputs.version_name }}
+          # 先落成草稿，确认更新日志后再手动发布
+          draft: true
           prerelease: ${{ github.event.inputs.prerelease == 'true' }}
           generate_release_notes: true
+          files: ${{ steps.apk.outputs.file }}
+
+      - name: 上传 mapping
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapping-stable
+          path: app/build/outputs/mapping/release/mapping.txt
+          retention-days: 15
+          if-no-files-found: warn
