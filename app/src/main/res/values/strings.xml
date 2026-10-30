@@ -203,7 +203,7 @@
     <string name="diagnostics_device">设备</string>
     <string name="diagnostics_rom">系统版本</string>
     <string name="diagnostics_event_count">已捕获按键事件</string>
-    <string name="diagnostics_hint">侧键按下后返回本页即可看到真实按键码。若「生效的拦截点」显示为回退，说明 Oplus 策略 hook 未命中，需要改用原始 code。</string>
+    <string name="diagnostics_hint">停留在本页，按一次侧键，数据会通过广播实时推回来。「生效的拦截点」应显示为 Oplus 策略类；若一直无数据，说明模块未在 system_server 生效。</string>
     <string name="diagnostics_copied">已复制诊断信息</string>
     <string name="diagnostics_copy">复制诊断信息</string>
     <string name="diagnostics_refresh">刷新</string>

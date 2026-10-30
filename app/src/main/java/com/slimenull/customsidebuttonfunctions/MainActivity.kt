@@ -1,9 +1,11 @@
 package com.slimenull.customsidebuttonfunctions
 
 import android.content.Context
+import android.content.BroadcastReceiver
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -145,7 +147,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Dialog
-import com.slimenull.customsidebuttonfunctions.data.DiagnosticsStore
 import com.slimenull.customsidebuttonfunctions.data.SettingsStore
 import com.slimenull.customsidebuttonfunctions.data.XposedServiceManager
 import com.slimenull.customsidebuttonfunctions.model.ActionType
@@ -1545,8 +1546,22 @@ private fun DiagnosticsScreen(
     padding: PaddingValues
 ) {
     val context = LocalContext.current
-    var refreshKey by remember { mutableIntStateOf(0) }
-    val diagnostics = remember(refreshKey) { DiagnosticsStore.load() }
+    var diagnostics by remember { mutableStateOf<DeviceDiagnostics?>(null) }
+    DisposableEffect(context) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(received: Context, intent: Intent) {
+                if (intent.action != DeviceDiagnostics.ACTION) return
+                diagnostics = DeviceDiagnostics.fromIntent(intent)
+            }
+        }
+        val filter = IntentFilter(DeviceDiagnostics.ACTION)
+        if (Build.VERSION.SDK_INT >= 33) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            context.registerReceiver(receiver, filter)
+        }
+        onDispose { runCatching { context.unregisterReceiver(receiver) } }
+    }
     val active = XposedServiceManager.isModuleActive
     val info = diagnostics
 
@@ -1618,7 +1633,7 @@ private fun DiagnosticsScreen(
             item { InfoCard(stringResource(R.string.diagnostics_hint)) }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ActionChip(stringResource(R.string.diagnostics_refresh)) { refreshKey++ }
+                    ActionChip(stringResource(R.string.diagnostics_refresh)) { diagnostics = null }
                     ActionChip(stringResource(R.string.diagnostics_copy)) {
                         val summary = buildString {
                             append("device=${Build.MANUFACTURER} ${Build.MODEL}\n")
