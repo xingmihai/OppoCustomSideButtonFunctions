@@ -1,11 +1,11 @@
 package com.slimenull.customsidebuttonfunctions.xposed
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.ComponentName
-import com.slimenull.customsidebuttonfunctions.RootCommandTrampolineActivity
 import com.slimenull.customsidebuttonfunctions.RootCommandReceiver
 import com.slimenull.customsidebuttonfunctions.RootCommandService
+import com.slimenull.customsidebuttonfunctions.RootCommandTrampolineActivity
 import com.slimenull.customsidebuttonfunctions.onXposedFailure
 
 /** Runs in the process that handled the side key; never blocks its input thread. */
@@ -48,11 +48,7 @@ internal object ShellCommandRunner {
                 showToast,
                 preferSu
             )
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startForegroundService(intent)
             XposedBridge.log("CustomSideButtonFunctions: dispatched root command to app service")
             true
         }.onXposedFailure("service dispatch").getOrDefault(false)

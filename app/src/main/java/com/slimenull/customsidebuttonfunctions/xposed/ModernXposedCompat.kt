@@ -2,7 +2,6 @@ package com.slimenull.customsidebuttonfunctions.xposed
 
 import android.util.Log
 import io.github.libxposed.api.XposedInterface
-import java.lang.reflect.Constructor
 import java.lang.reflect.Executable
 import java.lang.reflect.Field
 import java.lang.reflect.Method

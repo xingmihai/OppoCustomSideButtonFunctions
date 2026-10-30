@@ -2,7 +2,6 @@ package com.slimenull.customsidebuttonfunctions
 
 import android.app.Activity
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 
 /** Invisible launcher used when ColorOS blocks starting a background service directly. */
@@ -16,17 +15,13 @@ class RootCommandTrampolineActivity : Activity() {
                 .putExtra(RootCommandService.EXTRA_COMMAND, command)
                 .putExtra(RootCommandService.EXTRA_SHOW_TOAST, intent.getBooleanExtra(EXTRA_SHOW_TOAST, true))
                 .putExtra(RootCommandService.EXTRA_PREFER_SU, intent.getBooleanExtra(EXTRA_PREFER_SU, false))
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent)
-            } else {
-                startService(serviceIntent)
-            }
+            startForegroundService(serviceIntent)
         }
         // This activity is launched in its own task so finishing it cannot expose MainActivity
         // from the app's existing task when the app is already running in the background.
         finishAndRemoveTask()
-        @Suppress("DEPRECATION")
-        overridePendingTransition(0, 0)
+        // overridePendingTransition 自 API 34 起废弃，minSdk 37 下直接用新接口
+        overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
     }
 
     companion object {

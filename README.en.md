@@ -78,7 +78,11 @@ The second page of the bottom navigation is "About", which retains the developer
 
 ## Building
 
-Requires the Android SDK and the project's Gradle Wrapper. On Windows, run:
+Requires the Android SDK (compileSdk 37) and the project's Gradle Wrapper.
+
+This project is trimmed for a single device: `minSdk = 37`, `targetSdk = 37`. It builds and installs only on Android 17 devices, and runtime branches for older versions have been removed.
+
+On Windows, run:
 
 ```powershell
 .\gradlew.bat :app:assembleDebug

@@ -1,8 +1,8 @@
 package com.slimenull.customsidebuttonfunctions.xposed
 
-import android.view.KeyEvent
 import android.inputmethodservice.InputMethodService
 import android.os.Handler
+import android.view.KeyEvent
 import com.slimenull.customsidebuttonfunctions.model.AppSettings
 import com.slimenull.customsidebuttonfunctions.model.CursorControlMode
 import com.slimenull.customsidebuttonfunctions.model.CursorLongPressAction

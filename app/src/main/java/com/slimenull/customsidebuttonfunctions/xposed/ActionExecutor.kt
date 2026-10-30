@@ -1,18 +1,19 @@
 package com.slimenull.customsidebuttonfunctions.xposed
 
-import android.content.Context
+import android.app.ActivityOptions
 import android.content.ComponentName
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.app.ActivityOptions
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
 import android.media.AudioManager.RINGER_MODE_NORMAL
 import android.media.AudioManager.RINGER_MODE_SILENT
 import android.media.AudioManager.RINGER_MODE_VIBRATE
-import android.os.Build
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
@@ -23,10 +24,8 @@ import android.os.Process
 import android.os.UserHandle
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.net.Uri
-import android.util.Log
-import android.widget.Toast
 import android.view.KeyEvent
+import android.widget.Toast
 import com.slimenull.customsidebuttonfunctions.model.ActionType
 import com.slimenull.customsidebuttonfunctions.model.AppSettings
 import com.slimenull.customsidebuttonfunctions.model.CommonAction
@@ -114,7 +113,7 @@ internal class ActionExecutor {
                 SideKeyCombinationAction.NONE -> return@runCatching
             }
             val downTime = android.os.SystemClock.uptimeMillis()
-            val audio = currentContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            val audio = currentContext.getSystemService(AudioManager::class.java)
             audio.dispatchMediaKeyEvent(KeyEvent(downTime, downTime, KeyEvent.ACTION_DOWN, keyCode, 0))
             audio.dispatchMediaKeyEvent(KeyEvent(downTime, android.os.SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, keyCode, 0))
             if (vibrationEnabled) vibrateInstant(currentContext)
@@ -174,12 +173,12 @@ internal class ActionExecutor {
     }.onXposedFailure("resolve system context").getOrNull()
 
     private fun showRingerMode(context: Context) {
-        val audio = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val audio = context.getSystemService(AudioManager::class.java)
         sendRingModeSeedling(context, getRingerModeInternal(audio))
     }
 
     private fun dispatchMediaKey(context: Context, keyCode: Int) {
-        val audio = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val audio = context.getSystemService(AudioManager::class.java)
         val downTime = android.os.SystemClock.uptimeMillis()
         audio.dispatchMediaKeyEvent(KeyEvent(downTime, downTime, KeyEvent.ACTION_DOWN, keyCode, 0))
         audio.dispatchMediaKeyEvent(
@@ -188,7 +187,7 @@ internal class ActionExecutor {
     }
 
     private fun cycleRinger(context: Context): Int {
-        val audio = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val audio = context.getSystemService(AudioManager::class.java)
         val nextMode = when (getRingerModeInternal(audio)) {
             RINGER_MODE_NORMAL -> RINGER_MODE_VIBRATE
             RINGER_MODE_VIBRATE -> RINGER_MODE_SILENT
@@ -236,15 +235,15 @@ internal class ActionExecutor {
         if (toggleDndThroughSystemUi(context)) return
 
         // Keep this framework path for ROMs without the Oplus service.
-        val notification = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !notification.isNotificationPolicyAccessGranted) {
+        val notification = context.getSystemService(NotificationManager::class.java)
+        if (!notification.isNotificationPolicyAccessGranted) {
             showToast(context, "Please grant Do Not Disturb access permission first")
             return
         }
         notification.setInterruptionFilter(
-            if (notification.currentInterruptionFilter == android.app.NotificationManager.INTERRUPTION_FILTER_NONE)
-                android.app.NotificationManager.INTERRUPTION_FILTER_ALL
-            else android.app.NotificationManager.INTERRUPTION_FILTER_NONE
+            if (notification.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_NONE)
+                NotificationManager.INTERRUPTION_FILTER_ALL
+            else NotificationManager.INTERRUPTION_FILTER_NONE
         )
     }
 
@@ -435,7 +434,7 @@ internal class ActionExecutor {
         XposedBridge.log("try camera control toggle")
         // Keep the CameraManager path for ROMs without an exposed vendor strategy (and for the
         // generic PhoneWindowManager/raw-input fallbacks).
-        val camera = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val camera = context.getSystemService(CameraManager::class.java)
         val cameraId = camera.cameraIdList.firstOrNull { id ->
             camera.getCameraCharacteristics(id).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
         } ?: return false
@@ -606,11 +605,7 @@ internal class ActionExecutor {
         runCatching {
             val intent = resolveFlashNotesIntent(currentContext)
                 ?: error("no compatible Flash Notes service found")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                currentContext.startForegroundService(intent)
-            } else {
-                currentContext.startService(intent)
-            }
+            currentContext.startForegroundService(intent)
             XposedBridge.log("CustomSideButtonFunctions: triggered ColorOS Flash Notes service")
         }.onXposedFailure("start Flash Notes service")
     }
@@ -729,29 +724,17 @@ internal class ActionExecutor {
 
     private fun vibrateDuration(context: Context, durationMs: Long) {
         runCatching {
-            val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            val vibrator = context.getSystemService(Vibrator::class.java)
             if (vibrator?.hasVibrator() != true) return
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(durationMs)
-            }
+            vibrator.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
         }.onXposedFailure("vibrate duration")
     }
 
     private fun vibrateInstant(context: Context) {
         runCatching {
-            val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            val vibrator = context.getSystemService(Vibrator::class.java)
             if (vibrator?.hasVibrator() != true) return
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createOneShot(10L, VibrationEffect.DEFAULT_AMPLITUDE))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(10L)
-            }
+            vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
         }.onXposedFailure("vibrate")
     }
 

@@ -349,15 +349,15 @@ internal class CursorControlController {
     private fun isCursorControlAvailable(mode: CursorControlMode, displayId: Int = 0): Boolean {
         if (mode == CursorControlMode.DISABLED) return false
         val currentContext = context ?: resolveSystemContext()?.also { context = it } ?: return false
-        val power = currentContext.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        val power = currentContext.getSystemService(PowerManager::class.java)
         if (power != null && !power.isInteractive) return false
-        val telephony = currentContext.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
+        val telephony = currentContext.getSystemService(TelephonyManager::class.java)
         if (telephony != null && runCatching { telephony.callState }
                 .onXposedFailure("read telephony call state")
                 .getOrDefault(TelephonyManager.CALL_STATE_IDLE) != TelephonyManager.CALL_STATE_IDLE) return false
-        val audio = currentContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        val audio = currentContext.getSystemService(AudioManager::class.java)
         if (audio?.mode == AudioManager.MODE_IN_CALL || audio?.mode == AudioManager.MODE_IN_COMMUNICATION) return false
-        val keyguard = currentContext.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+        val keyguard = currentContext.getSystemService(KeyguardManager::class.java)
         if (keyguard?.isKeyguardLocked == true) return false
         val systemUiOverlay = isSystemUiOverlayActive(displayId)
         val imeVisible = isImeVisible()

@@ -6,10 +6,10 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.IBinder
 import android.util.Log
-import rikka.shizuku.Shizuku
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import rikka.shizuku.Shizuku
 
 /** Starts the declared UserService and asks it to execute a command with Shizuku privileges. */
 internal object ShizukuShellCommandExecutor {

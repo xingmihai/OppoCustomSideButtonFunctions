@@ -1,13 +1,13 @@
 package com.slimenull.customsidebuttonfunctions.xposed
 
 import android.os.ParcelFileDescriptor
+import android.view.KeyEvent
 import com.slimenull.customsidebuttonfunctions.data.SettingsStore
 import com.slimenull.customsidebuttonfunctions.model.AppSettings
 import com.slimenull.customsidebuttonfunctions.model.DeviceConfig
-import android.view.KeyEvent
+import io.github.libxposed.api.XposedInterface
 import java.io.FileNotFoundException
 import java.nio.charset.StandardCharsets
-import io.github.libxposed.api.XposedInterface
 import org.json.JSONObject
 
 internal object SettingsReader {

@@ -74,7 +74,11 @@
 
 ## 构建
 
-需要 Android SDK 和项目 Gradle Wrapper。Windows 下运行：
+需要 Android SDK（compileSdk 37）和项目 Gradle Wrapper。
+
+本项目按“只服务一台设备”做了裁剪：`minSdk = 37`、`targetSdk = 37`，仅面向 Android 17 设备构建与安装，代码中不再保留旧版本的运行时分支。
+
+Windows 下运行：
 
 ```powershell
 .\gradlew.bat :app:assembleDebug

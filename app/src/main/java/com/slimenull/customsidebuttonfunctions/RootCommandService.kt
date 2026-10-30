@@ -1,12 +1,12 @@
 package com.slimenull.customsidebuttonfunctions
 
-import android.app.Service
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.Service
 import android.content.Intent
-import android.os.IBinder
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
@@ -53,11 +53,9 @@ class RootCommandService : Service() {
 
     private fun notification(): Notification {
         val channelId = "root_command"
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            getSystemService(NotificationManager::class.java).createNotificationChannel(
-                NotificationChannel(channelId, getString(R.string.shell_notification_channel), NotificationManager.IMPORTANCE_LOW)
-            )
-        }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(channelId, getString(R.string.shell_notification_channel), NotificationManager.IMPORTANCE_LOW)
+        )
         return Notification.Builder(this, channelId)
             .setSmallIcon(android.R.drawable.stat_notify_sync_noanim)
             .setContentTitle(getString(R.string.shell_notification_title))

@@ -52,8 +52,9 @@ android {
 
     defaultConfig {
         applicationId = "com.slimenull.customsidebuttonfunctions"
-        minSdk = 26
-        targetSdk = 35
+        // 只服务一台设备（一加 Ace 6 / PLQ110，Android 17），不再保留旧版本兼容
+        minSdk = 37
+        targetSdk = 37
         versionCode = commitCount
         versionName = resolvedVersionName
     }
