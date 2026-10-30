@@ -16,9 +16,15 @@ jobs:
           - name: A-minSdk37
             min: 37
             tgt: 37
+            legacy: "false"
           - name: B-minSdk26
             min: 26
             tgt: 35
+            legacy: "false"
+          - name: C-37-forcecompress
+            min: 37
+            tgt: 37
+            legacy: "true"
     steps:
       - name: 检出 master
         uses: actions/checkout@v4
@@ -40,13 +46,23 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: bash .github/scripts/setup-signing.sh
 
-      # 对照组：只改 SDK 版本，其余代码完全一致
-      - name: 设置 minSdk=${{ matrix.min }} targetSdk=${{ matrix.tgt }}
+      - name: 设置对照变量
         run: |
           set -euo pipefail
           sed -i "s/minSdk = 37/minSdk = ${{ matrix.min }}/" app/build.gradle.kts
           sed -i "s/targetSdk = 37/targetSdk = ${{ matrix.tgt }}/" app/build.gradle.kts
-          grep -n "minSdk\|targetSdk" app/build.gradle.kts
+          if [ "${{ matrix.legacy }}" = "true" ]; then
+          python3 <<'PYEOF'
+          p = "app/build.gradle.kts"
+          s = open(p).read()
+          old = '    packaging {\n        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"\n    }'
+          new = '    packaging {\n        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"\n        dex { useLegacyPackaging = true }\n        jniLibs { useLegacyPackaging = true }\n    }'
+          assert old in s, "packaging block not found"
+          open(p, "w").write(s.replace(old, new))
+          print("patched packaging")
+          PYEOF
+          fi
+          grep -n "minSdk\|targetSdk\|useLegacyPackaging" app/build.gradle.kts
 
       - name: 构建并分解
         run: |
@@ -54,22 +70,9 @@ jobs:
           chmod +x ./gradlew
           ./gradlew assembleRelease --stacktrace
           APK=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
-          # 结果通过 annotation 输出，便于直接从 API 读取
           emit() { echo "::notice::${{ matrix.name }} | $1"; }
-          emit "total_bytes=$(stat -c %s "$APK")"
-          unzip -l "$APK" | awk '
-            /classes.*\.dex/ {dex+=$1}
-            /res\// {res+=$1}
-            /resources\.arsc/ {arsc+=$1}
-            /lib\// {lib+=$1}
-            /META-INF/ {meta+=$1}
-            END { printf "dex=%d res=%d arsc=%d lib=%d meta=%d\n", dex, res, arsc, lib, meta }' | while IFS= read -r l; do emit "$l"; done
-          unzip -l "$APK" | sort -k1 -n -r | sed -n '4,16p' | awk '{print $1" "$4}' | while IFS= read -r l; do emit "big: $l"; done
-          emit "--- 压缩方式统计 (Method: Defl=压缩 Stored=未压缩) ---"
-          unzip -v "$APK" | awk 'NR>3 && /Defl|Stored/ {print $2}' | sort | uniq -c | while IFS= read -r l; do emit "method: $l"; done
-          emit "--- dex 压缩前后 ---"
-          unzip -v "$APK" 'classes*.dex' | awk 'NR>3 {printf "%s uncompressed=%s compressed=%s cmpr=%s\n", $8, $1, $3, $4}' | while IFS= read -r l; do emit "dex: $l"; done
-          emit "--- 未压缩(Stored)的大项 ---"
-          unzip -v "$APK" | awk 'NR>3 && $2=="Stored" {print $1" "$8}' | sort -k1 -n -r | head -8 | while IFS= read -r l; do emit "stored: $l"; done
-          unzip -Z1 "$APK" 'classes*.dex' | while IFS= read -r l; do emit "dexfile: $l"; done
-          emit "mapping_lines=$(wc -l < app/build/outputs/mapping/release/mapping.txt)" 
+          emit "total=$(stat -c %s "$APK")"
+          unzip -v "$APK" | awk 'NR>3 && ($2=="Defl:N"||$2=="Stored") {m=($2=="Stored")?"Stored":"Defl"; tot[m]+=$1; raw[m]+=$3; n[m]++}
+            END { printf "Defl: count=%d raw=%d packed=%d\n", n["Defl"], raw["Defl"], tot["Defl"];
+                  printf "Stored: count=%d raw=%d packed=%d\n", n["Stored"], raw["Stored"], tot["Stored"] }' | while IFS= read -r l; do emit "$l"; done
+          unzip -l "$APK" | awk '/classes.*\.dex/ {d+=$1} /resources\.arsc/ {a+=$1} END {printf "dex_raw=%d arsc_raw=%d\n", d, a}' | while IFS= read -r l; do emit "$l"; done
