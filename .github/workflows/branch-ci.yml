@@ -1,0 +1,89 @@
+name: Dev CI
+
+# 开发分支：只做构建验证与产物留存，不建 Release
+on:
+  push:
+    branches-ignore:
+      - master
+    paths:
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - ".github/workflows/branch-ci.yml"
+      - ".github/scripts/**"
+  workflow_dispatch:
+
+concurrency:
+  group: branch-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: 构建验证
+    if: |
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[skip dev]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 配置 JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: 恢复签名配置
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: bash .github/scripts/setup-signing.sh
+
+      - name: 构建 Release APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --stacktrace
+          ./gradlew printVersionInfo --quiet | tee version.txt
+
+      - name: 整理并校验产物
+        id: apk
+        run: |
+          set -euo pipefail
+          VERSION_NAME=$(sed -n 's/^VERSION_NAME=//p' version.txt | head -1)
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          APK=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
+          NEW="CustomSideButtonFunctions-dev-${SHORT_SHA}-${VERSION_NAME}.apk"
+          mv "$APK" "$NEW"
+          bash .github/scripts/verify-apk.sh "$NEW"
+          echo "file=$NEW" >> "$GITHUB_OUTPUT"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: 上传 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-apk-${{ steps.apk.outputs.version_name }}
+          path: ${{ steps.apk.outputs.file }}
+          retention-days: 15
+          if-no-files-found: error
+
+      - name: 上传 mapping
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapping-dev
+          path: app/build/outputs/mapping/release/mapping.txt
+          retention-days: 15
+          if-no-files-found: warn
