@@ -1,10 +1,13 @@
 package com.slimenull.customsidebuttonfunctions
 
 import android.content.Context
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.widget.Toast
 import android.os.Bundle
 import android.view.RoundedCorner
 import android.view.SoundEffectConstants
@@ -63,6 +66,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Backspace
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Code
@@ -141,12 +145,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Dialog
+import com.slimenull.customsidebuttonfunctions.data.DiagnosticsStore
 import com.slimenull.customsidebuttonfunctions.data.SettingsStore
+import com.slimenull.customsidebuttonfunctions.data.XposedServiceManager
 import com.slimenull.customsidebuttonfunctions.model.ActionType
 import com.slimenull.customsidebuttonfunctions.model.AppSettings
 import com.slimenull.customsidebuttonfunctions.model.CommonAction
 import com.slimenull.customsidebuttonfunctions.model.CustomActionSettings
 import com.slimenull.customsidebuttonfunctions.model.CursorControlMode
+import com.slimenull.customsidebuttonfunctions.model.DeviceConfig
 import com.slimenull.customsidebuttonfunctions.model.CursorLongPressAction
 import com.slimenull.customsidebuttonfunctions.model.MAX_CURSOR_LONG_PRESS_MS
 import com.slimenull.customsidebuttonfunctions.model.MAX_CURSOR_REPEAT_INTERVAL_MS
@@ -159,6 +166,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.foundation.layout.ColumnScope
 
 private val AppBackground = Color(0xFFF3F7FD)
 private val AppBlue = Color(0xFF347FE8)
@@ -253,6 +262,7 @@ private sealed interface Route {
     data object Morse : Route
     data object Feedback : Route
     data object Advanced : Route
+    data object Diagnostics : Route
     data class Gesture(val kind: GestureKind) : Route
 }
 
@@ -570,6 +580,7 @@ private fun RouteScreen(
         Route.Morse -> MorseScreen(settings, persist, { navigate(Route.Home) }, padding)
         Route.Feedback -> FeedbackScreen(settings, persist, { navigate(Route.Home) }, padding)
         Route.Advanced -> AdvancedScreen(settings, persist, { navigate(Route.Home) }, padding)
+        Route.Diagnostics -> DiagnosticsScreen(settings, persist, { navigate(Route.Home) }, padding)
         is Route.Gesture -> GestureScreen(route.kind, settings, persist, { navigate(Route.Home) }, padding)
     }
 }
@@ -682,6 +693,9 @@ private fun HomeScreen(
             }
             item {
                 SettingRow(Icons.Default.Settings, stringResource(R.string.setting_advanced), stringResource(R.string.setting_advanced_desc)) { navigate(Route.Advanced) }
+            }
+            item {
+                SettingRow(Icons.Default.BugReport, stringResource(R.string.diagnostics_title), stringResource(R.string.diagnostics_desc)) { navigate(Route.Diagnostics) }
             }
         }
     }
@@ -1508,25 +1522,153 @@ private fun AdvancedScreen(settings: AppSettings, persist: (AppSettings) -> Unit
                 }
             }
           }
-          item { SectionLabel(stringResource(R.string.advanced_input_device)) }
+          item { SectionLabel(stringResource(R.string.advanced_side_key)) }
           item {
             Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = settings.inputDevicePath,
-                        onValueChange = { persist(settings.copy(inputDevicePath = it)) },
-                        label = { Text(stringResource(R.string.advanced_device_path)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    NumberField(settings.keyCode.toString(), stringResource(R.string.advanced_key_code)) {
-                        it.toIntOrNull()?.let { code -> persist(settings.copy(keyCode = code)) }
-                    }
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    DiagnosticsLine(stringResource(R.string.advanced_key_code), DeviceConfig.SIDE_KEY_CODE.toString())
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    DiagnosticsLine(stringResource(R.string.advanced_device_path), "gpio-keys (BTN_TRIGGER_HAPPY32)")
                 }
             }
           }
-          item { InfoCard(stringResource(R.string.advanced_device_hint)) }
+          item { InfoCard(stringResource(R.string.advanced_side_key_hint)) }
         }
+    }
+}
+
+@Composable
+private fun DiagnosticsScreen(
+    settings: AppSettings,
+    persist: (AppSettings) -> Unit,
+    back: () -> Unit,
+    padding: PaddingValues
+) {
+    val context = LocalContext.current
+    var refreshKey by remember { mutableIntStateOf(0) }
+    val diagnostics = remember(refreshKey) { DiagnosticsStore.load() }
+    val active = XposedServiceManager.isModuleActive
+    val info = diagnostics
+
+    Column(Modifier.fillMaxSize().padding(padding)) {
+        BackTitle(stringResource(R.string.diagnostics_title), back)
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            item { SectionLabel(stringResource(R.string.diagnostics_module_status)) }
+            item {
+                DiagnosticsCard {
+                    DiagnosticsLine(
+                        stringResource(R.string.diagnostics_module_status),
+                        if (active) stringResource(R.string.diagnostics_module_active)
+                        else stringResource(R.string.diagnostics_module_inactive)
+                    )
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    DiagnosticsLine(
+                        stringResource(R.string.diagnostics_hook_path),
+                        info?.hookPath?.takeIf { it.isNotBlank() }
+                            ?: stringResource(R.string.diagnostics_hook_unknown)
+                    )
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    DiagnosticsLine(
+                        stringResource(R.string.diagnostics_event_count),
+                        (info?.keyEventCount ?: 0).toString()
+                    )
+                }
+            }
+
+            item { SectionLabel(stringResource(R.string.diagnostics_last_key)) }
+            item {
+                if (info == null || !info.hasKeySample) {
+                    InfoCard(stringResource(R.string.diagnostics_no_key))
+                } else {
+                    DiagnosticsCard {
+                        info.lastKeyCode?.let {
+                            DiagnosticsLine(stringResource(R.string.diagnostics_key_code), it.toString())
+                            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                        }
+                        info.lastScanCode?.let {
+                            DiagnosticsLine(stringResource(R.string.diagnostics_scan_code), it.toString())
+                            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                        }
+                        DiagnosticsLine(
+                            stringResource(R.string.diagnostics_current_key_code),
+                            "${DeviceConfig.SIDE_KEY_CODE}"
+                        )
+                    }
+                }
+            }
+
+            item { SectionLabel(stringResource(R.string.diagnostics_device)) }
+            item {
+                DiagnosticsCard {
+                    DiagnosticsLine(stringResource(R.string.diagnostics_device), "${Build.MANUFACTURER} ${Build.MODEL}")
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    DiagnosticsLine(stringResource(R.string.diagnostics_rom), Build.DISPLAY ?: "")
+                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFEAF0F7))
+                    DiagnosticsLine(
+                        stringResource(R.string.diagnostics_configured_code),
+                        DeviceConfig.SIDE_KEY_CODE.toString()
+                    )
+                }
+            }
+
+            item { InfoCard(stringResource(R.string.diagnostics_hint)) }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ActionChip(stringResource(R.string.diagnostics_refresh)) { refreshKey++ }
+                    ActionChip(stringResource(R.string.diagnostics_copy)) {
+                        val summary = buildString {
+                            append("device=${Build.MANUFACTURER} ${Build.MODEL}\n")
+                            append("rom=${Build.DISPLAY}\n")
+                            append("moduleActive=$active\n")
+                            append("hook=${info?.hookPath.orEmpty()}\n")
+                            append("keyCode=${info?.lastKeyCode}\n")
+                            append("scanCode=${info?.lastScanCode}\n")
+                            append("configuredKeyCode=${DeviceConfig.SIDE_KEY_CODE}\n")
+                        }
+                        val manager = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                        manager?.setPrimaryClip(ClipData.newPlainText("diagnostics", summary))
+                        Toast.makeText(context, context.getString(R.string.diagnostics_copied), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiagnosticsCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Column(Modifier.padding(14.dp)) { content() }
+    }
+}
+
+@Composable
+private fun DiagnosticsLine(label: String, value: String) {
+    Column {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = AppMuted)
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            fontFamily = FontFamily.Monospace
+        )
+    }
+}
+
+@Composable
+private fun ActionChip(text: String, onClick: () -> Unit) {
+    val view = LocalView.current
+    val shape = RoundedCornerShape(50)
+    Box(
+        Modifier.clip(shape).background(AppBlueSoft).clickable { clickSound(view); onClick() }
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text, color = AppBlueDark, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
     }
 }
 

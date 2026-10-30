@@ -4,8 +4,6 @@ const val DEFAULT_UNKNOWN_MORSE_TOAST = "未知操作序列"
 
 data class AppSettings(
     val enabled: Boolean = true,
-    val keyCode: Int = 735,
-    val inputDevicePath: String = "/dev/input/event0",
     val longPressMs: Long = 300L,
     val doubleClickWindowMs: Long = 300L,
     val singleAction: ActionType = ActionType.CYCLE_RINGER,
@@ -32,7 +30,8 @@ data class AppSettings(
     val toastText: String = "侧键操作已执行",
     val unknownMorseFeedbackEnabled: Boolean = false,
     val unknownMorseToastText: String = DEFAULT_UNKNOWN_MORSE_TOAST,
-    val preferSuForShellCommands: Boolean = false,
+    // 本机装了 KernelSU 但没有 Shizuku，直接走 su 省掉一次无谓的绑定超时
+    val preferSuForShellCommands: Boolean = true,
     val wakeScreenWhenOff: Boolean = false,
     val cursorControlMode: CursorControlMode = CursorControlMode.DISABLED,
     val cursorLongPressAction: CursorLongPressAction = CursorLongPressAction.NONE,

@@ -3,6 +3,7 @@ package com.slimenull.customsidebuttonfunctions.xposed
 import android.os.ParcelFileDescriptor
 import com.slimenull.customsidebuttonfunctions.data.SettingsStore
 import com.slimenull.customsidebuttonfunctions.model.AppSettings
+import com.slimenull.customsidebuttonfunctions.model.DeviceConfig
 import android.view.KeyEvent
 import java.io.FileNotFoundException
 import java.nio.charset.StandardCharsets
@@ -45,7 +46,7 @@ internal object SettingsReader {
         }
     }
 
-    fun peekKeyCode(): Int = load().keyCode
+    fun peekKeyCode(): Int = DeviceConfig.SIDE_KEY_CODE
 
     /** Vendor buttons often expose the Linux BTN_TRIGGER_HAPPY value as scanCode, not keyCode. */
     fun matches(event: KeyEvent): Boolean {
@@ -53,7 +54,8 @@ internal object SettingsReader {
     }
 
     fun matches(event: KeyEvent, settings: AppSettings): Boolean {
-        val configuredCode = settings.keyCode
-        return event.keyCode == configuredCode || event.scanCode == configuredCode
+        // 按键码已按本机实测固化，settings 保留参数仅为兼容既有调用
+        return event.keyCode == DeviceConfig.SIDE_KEY_CODE ||
+            event.scanCode == DeviceConfig.SIDE_KEY_CODE
     }
 }

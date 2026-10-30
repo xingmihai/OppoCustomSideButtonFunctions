@@ -43,8 +43,6 @@ object SettingsStore {
     private var remoteSyncInitialized = false
 
     private const val KEY_ENABLED = "enabled"
-    private const val KEY_KEY_CODE = "key_code"
-    private const val KEY_INPUT_PATH = "input_device_path"
     private const val KEY_LONG_PRESS_MS = "long_press_ms"
     private const val KEY_DOUBLE_WINDOW_MS = "double_click_window_ms"
     private const val KEY_SINGLE_ACTION = "single_action"
@@ -195,8 +193,6 @@ object SettingsStore {
     private fun writeLocal(context: Context, settings: AppSettings): Boolean = runCatching {
         preferences(context).edit()
             .putBoolean(KEY_ENABLED, settings.enabled)
-            .putInt(KEY_KEY_CODE, settings.keyCode)
-            .putString(KEY_INPUT_PATH, settings.inputDevicePath)
             .putLong(KEY_LONG_PRESS_MS, settings.longPressMs)
             .putLong(KEY_DOUBLE_WINDOW_MS, settings.doubleClickWindowMs)
             .putString(KEY_SINGLE_ACTION, settings.singleAction.name)
@@ -239,8 +235,6 @@ object SettingsStore {
 
     fun fromPreferences(preferences: SharedPreferences): AppSettings = AppSettings(
         enabled = preferences.getBoolean(KEY_ENABLED, true),
-        keyCode = preferences.getInt(KEY_KEY_CODE, 735),
-        inputDevicePath = preferences.getString(KEY_INPUT_PATH, "/dev/input/event0") ?: "/dev/input/event0",
         longPressMs = preferences.getLong(KEY_LONG_PRESS_MS, 300L).coerceIn(100L, 800L),
         doubleClickWindowMs = preferences.getLong(KEY_DOUBLE_WINDOW_MS, 300L).coerceIn(100L, 800L),
         singleAction = action(preferences.getString(KEY_SINGLE_ACTION, null)),
@@ -320,8 +314,6 @@ object SettingsStore {
     /** Serialize the complete settings snapshot used by the LibXposed remote-file bridge. */
     internal fun toJson(settings: AppSettings): JSONObject = JSONObject().apply {
         put(KEY_ENABLED, settings.enabled)
-        put(KEY_KEY_CODE, settings.keyCode)
-        put(KEY_INPUT_PATH, settings.inputDevicePath)
         put(KEY_LONG_PRESS_MS, settings.longPressMs)
         put(KEY_DOUBLE_WINDOW_MS, settings.doubleClickWindowMs)
         put(KEY_SINGLE_ACTION, settings.singleAction.name)
@@ -364,8 +356,6 @@ object SettingsStore {
     /** Deserialize a remote-file snapshot, applying the same bounds and defaults as preferences. */
     internal fun fromJson(json: JSONObject): AppSettings = AppSettings(
         enabled = json.optBoolean(KEY_ENABLED, true),
-        keyCode = json.optInt(KEY_KEY_CODE, 735),
-        inputDevicePath = json.optString(KEY_INPUT_PATH, "/dev/input/event0"),
         longPressMs = json.optLong(KEY_LONG_PRESS_MS, 300L).coerceIn(100L, 800L),
         doubleClickWindowMs = json.optLong(KEY_DOUBLE_WINDOW_MS, 300L).coerceIn(100L, 800L),
         singleAction = action(optionalString(json, KEY_SINGLE_ACTION)),

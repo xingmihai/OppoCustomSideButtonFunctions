@@ -23,6 +23,7 @@ class XposedEntry : XposedModule() {
     override fun onSystemServerStarting(param: SystemServerStartingParam) {
         XposedRuntime.bind(this)
         SettingsReader.bind(this)
+        DiagnosticsReporter.bind(this)
         LegacyImeCursorHook.install()
         SideKeyModule.install(PackageHookParam("android", param.classLoader))
     }
@@ -31,6 +32,7 @@ class XposedEntry : XposedModule() {
         if (param.packageName == "com.coloros.shortcuts") {
             XposedRuntime.bind(this)
             SettingsReader.bind(this)
+            DiagnosticsReporter.bind(this)
             ShortcutsHook.install(PackageHookParam(param.packageName, param.classLoader))
         }
     }
@@ -199,6 +201,9 @@ private object LegacyImeCursorHook {
 
 internal object SideKeyModule {
     private const val TAG = "CustomSideButtonFunctions"
+    const val HOOK_OPLUS_STRATEGY = "Oplus StrategyActionButtonKeyLaunchApp"
+    const val HOOK_PHONE_WINDOW = "PhoneWindowManager.interceptKeyBeforeQueueing"
+    const val HOOK_NONE = "未安装任何按键拦截点"
     private var installed = false
 
     fun install(lpparam: PackageHookParam) {
@@ -219,8 +224,14 @@ internal object SideKeyModule {
         // the optional volume-key cursor feature.
         CursorControlController().install(lpparam)
         if (!oplusHookInstalled && !phoneHookInstalled) {
-            XposedBridge.log("$TAG: framework key hook unavailable, starting raw input fallback")
-            RawInputEventReader.start(controller, actionExecutor)
+            // 本机 Oplus 策略类已确认存在于 /system/framework/oplus-services.jar，
+            // 走不到这里；保留日志便于 OTA 后排查。
+            XposedBridge.log("$TAG: framework key hook unavailable")
+            DiagnosticsReporter.reportHook(HOOK_NONE)
+        } else {
+            DiagnosticsReporter.reportHook(
+                if (oplusHookInstalled) HOOK_OPLUS_STRATEGY else HOOK_PHONE_WINDOW
+            )
         }
     }
 
@@ -245,6 +256,7 @@ internal object SideKeyModule {
                 object : Hooker() {
                     override fun beforeHookedMethod(param: HookParam) {
                         val event = param.args[0] as? KeyEvent ?: return
+                        DiagnosticsReporter.reportKeyEvent(event)
                         val settings = SettingsReader.load()
                         if (!settings.enabled || settings.operationMode == OperationMode.DISABLED) {
                             controller.cancel()
@@ -270,6 +282,7 @@ internal object SideKeyModule {
                 }
             )
             XposedBridge.log("$TAG: hooked Oplus StrategyActionButtonKeyLaunchApp")
+            DiagnosticsReporter.reportHook(HOOK_OPLUS_STRATEGY)
             true
         } catch (error: Throwable) {
             XposedBridge.log("$TAG: Oplus strategy hook unavailable: ${error.javaClass.simpleName}: ${error.message}")
@@ -298,6 +311,7 @@ internal object SideKeyModule {
                     object : Hooker() {
                         override fun beforeHookedMethod(param: HookParam) {
                             val event = param.args[0] as? KeyEvent ?: return
+                            DiagnosticsReporter.reportKeyEvent(event)
                             val settings = SettingsReader.load()
                             if (!settings.enabled || settings.operationMode == OperationMode.DISABLED) {
                                 controller.cancel()
@@ -323,6 +337,7 @@ internal object SideKeyModule {
                     }
                 )
                 XposedBridge.log("$TAG: hooked $className.interceptKeyBeforeQueueing")
+                if (handleSideKey) DiagnosticsReporter.reportHook(HOOK_PHONE_WINDOW)
                 return true
             } catch (error: Throwable) {
                 XposedBridge.log("$TAG: cannot hook $className: ${error.javaClass.simpleName}: ${error.message}")
