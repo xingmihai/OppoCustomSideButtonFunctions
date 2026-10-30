@@ -99,6 +99,12 @@ android {
     }
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        // minSdk 37 下 AGP 默认把 dex 以未压缩方式打包（换取运行时免解压），
+        // 实测这会让 APK 从 1.29MB 涨到 2.33MB。本项目只服务一台设备，
+        // 体积优先，故改回压缩存储。
+        dex {
+            useLegacyPackaging = true
+        }
     }
 }
 
