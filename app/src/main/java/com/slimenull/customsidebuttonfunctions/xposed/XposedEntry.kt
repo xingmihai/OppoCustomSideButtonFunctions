@@ -15,6 +15,15 @@ import io.github.libxposed.api.XposedModuleInterface.SystemServerStartingParam
 
 /** Xposed entry point for the framework key hook and shortcut editor. */
 class XposedEntry : XposedModule() {
+    /** system_server 中没有普通 Application，退回到系统上下文用于发广播。 */
+    private fun resolveSystemContext(): android.content.Context? = runCatching {
+        val activityThread = Class.forName("android.app.ActivityThread")
+        (activityThread.getMethod("currentApplication").invoke(null) as? android.content.Context)
+            ?: (activityThread.getMethod("currentActivityThread").invoke(null)?.let {
+                activityThread.getMethod("getSystemContext").invoke(it) as? android.content.Context
+            })
+    }.onXposedFailure("resolve system context").getOrNull()
+
     override fun onModuleLoaded(param: ModuleLoadedParam) {
         XposedRuntime.bind(this)
         SettingsReader.bind(this)
@@ -345,15 +354,6 @@ internal object SideKeyModule {
         }
         return false
     }
-
-    /** system_server 中没有普通 Application，退回到系统上下文用于发广播。 */
-    private fun resolveSystemContext(): android.content.Context? = runCatching {
-        val activityThread = Class.forName("android.app.ActivityThread")
-        (activityThread.getMethod("currentApplication").invoke(null) as? android.content.Context)
-            ?: (activityThread.getMethod("currentActivityThread").invoke(null)?.let {
-                activityThread.getMethod("getSystemContext").invoke(it) as? android.content.Context
-            })
-    }.onXposedFailure("resolve system context").getOrNull()
 
     private fun resolveContext(instance: Any): android.content.Context? = runCatching {
         XposedHelpers.getObjectField(instance, "mContext") as? android.content.Context
