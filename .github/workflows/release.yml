@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 版本号标签，例如 v1.0.11
+        description: 版本号标签，例如 v1.1.0
         required: true
         type: string
       prerelease:
@@ -28,8 +28,11 @@ jobs:
     name: 构建签名 APK 并发布
     runs-on: ubuntu-latest
     steps:
+      # 版本号由 git 推导（提交数 + 最近的 v* 标签），必须拉取完整历史，不能用浅克隆
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # gradle/gradle-daemon-jvm.properties 要求 toolchainVersion=25
       - name: 配置 JDK 25
@@ -39,7 +42,7 @@ jobs:
           java-version: "25"
           cache: gradle
 
-      - name: 解析版本号
+      - name: 确定标签
         id: version
         env:
           INPUT_TAG: ${{ github.event.inputs.tag }}
@@ -52,7 +55,20 @@ jobs:
           fi
           case "$TAG" in v*) ;; *) TAG="v$TAG" ;; esac
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      # 本地先打上标签（暂不推送），让 git describe 算出干净的 versionName；
+      # 构建失败就不会留下空标签
+      - name: 预置标签
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "::error::标签 ${{ steps.version.outputs.tag }} 已存在"
+            exit 1
+          fi
+          git tag "${{ steps.version.outputs.tag }}"
 
       - name: 恢复签名配置
         env:
@@ -79,38 +95,41 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew assembleRelease --stacktrace
+          ./gradlew printVersionInfo --quiet | tee version.txt
 
       - name: 整理并校验产物
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -euo pipefail
+          VERSION_NAME=$(sed -n 's/^VERSION_NAME=//p' version.txt | head -1)
+          VERSION_CODE=$(sed -n 's/^VERSION_CODE=//p' version.txt | head -1)
+          echo "versionName=$VERSION_NAME versionCode=$VERSION_CODE"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           APK=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
-          mv "$APK" "CustomSideButtonFunctions-${{ steps.version.outputs.version }}.apk"
+          mv "$APK" "CustomSideButtonFunctions-$VERSION_NAME.apk"
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | head -1)
           if [ -n "$APKSIGNER" ]; then
-            "$APKSIGNER" verify --print-certs "CustomSideButtonFunctions-${{ steps.version.outputs.version }}.apk" | head -6
+            "$APKSIGNER" verify --print-certs "CustomSideButtonFunctions-$VERSION_NAME.apk" | head -6
           fi
+        id: apk
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: CustomSideButtonFunctions-${{ steps.version.outputs.version }}
+          name: CustomSideButtonFunctions-${{ steps.apk.outputs.version_name }}
           path: CustomSideButtonFunctions-*.apk
           if-no-files-found: error
 
-      # 手动触发时才创建标签；放在构建之后，构建失败不会留下空标签
-      - name: 创建标签
+      - name: 推送标签
         if: github.event_name == 'workflow_dispatch'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag "${{ steps.version.outputs.tag }}"
-          git push origin "${{ steps.version.outputs.tag }}"
+        run: git push origin "${{ steps.version.outputs.tag }}"
 
       - name: 发布 Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: v${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.tag }} (${{ steps.apk.outputs.version_name }})
           files: CustomSideButtonFunctions-*.apk
           prerelease: ${{ github.event.inputs.prerelease == 'true' }}
           generate_release_notes: true
