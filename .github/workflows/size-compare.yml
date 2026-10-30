@@ -10,17 +10,19 @@ jobs:
   compare:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - name: old-v1.0.12
-            ref: v1.0.12
-          - name: new-master
-            ref: master
+          - name: A-minSdk37
+            min: 37
+            tgt: 37
+          - name: B-minSdk26
+            min: 26
+            tgt: 35
     steps:
-      - name: 检出 ${{ matrix.ref }}
+      - name: 检出 master
         uses: actions/checkout@v4
         with:
-          ref: ${{ matrix.ref }}
           fetch-depth: 0
 
       - name: 配置 JDK 25
@@ -38,6 +40,14 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: bash .github/scripts/setup-signing.sh
 
+      # 对照组：只改 SDK 版本，其余代码完全一致
+      - name: 设置 minSdk=${{ matrix.min }} targetSdk=${{ matrix.tgt }}
+        run: |
+          set -euo pipefail
+          sed -i "s/minSdk = 37/minSdk = ${{ matrix.min }}/" app/build.gradle.kts
+          sed -i "s/targetSdk = 37/targetSdk = ${{ matrix.tgt }}/" app/build.gradle.kts
+          grep -n "minSdk\|targetSdk" app/build.gradle.kts
+
       - name: 构建并分解
         run: |
           set -euo pipefail
@@ -53,12 +63,10 @@ jobs:
             /resources\.arsc/ {arsc+=$1}
             /lib\// {lib+=$1}
             /META-INF/ {meta+=$1}
-            END {
-              printf "dex=%d res=%d arsc=%d lib=%d meta=%d\n", dex, res, arsc, lib, meta
-            }'
-          echo "-- 体积最大的 20 项 --"
-          unzip -l "$APK" | sort -k1 -n -r | head -23
-          echo "-- dex 数量 --"
-          unzip -Z1 "$APK" 'classes*.dex' | wc -l
-          echo "-- mapping 行数(反映保留的类/方法规模) --"
-          wc -l < app/build/outputs/mapping/release/mapping.txt || true
+            END { printf "dex=%d res=%d arsc=%d lib=%d meta=%d\n", dex, res, arsc, lib, meta }'
+          echo "-- 体积最大的 15 项 --"
+          unzip -l "$APK" | sort -k1 -n -r | head -18
+          echo "-- dex 文件 --"
+          unzip -Z1 "$APK" 'classes*.dex'
+          echo "-- mapping 行数 --"
+          wc -l < app/build/outputs/mapping/release/mapping.txt
