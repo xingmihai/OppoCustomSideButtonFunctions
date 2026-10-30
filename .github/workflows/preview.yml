@@ -58,9 +58,21 @@ jobs:
 
       - name: 构建 Release APK
         run: |
+          set -o pipefail
           chmod +x ./gradlew
-          ./gradlew assembleRelease --stacktrace
+          ./gradlew assembleRelease --stacktrace 2>&1 | tee build.log
           ./gradlew printVersionInfo --quiet | tee version.txt
+
+      - name: 输出编译错误
+        if: failure()
+        run: |
+          set +e
+          grep -E "^e: |^w: .*error|error:|FAILED" build.log 2>/dev/null | head -40 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
+          grep -A6 "What went wrong" build.log 2>/dev/null | head -20 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
 
       - name: 整理并校验产物
         id: apk
