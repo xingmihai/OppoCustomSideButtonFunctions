@@ -2513,7 +2513,7 @@ private fun actionIcon(action: ActionType): ImageVector = when (action) {
 private suspend fun PointerInputScope.detectIosSwipeBack(
     edgeFraction: Float = 0.3f,
     onStart: () -> Unit,
-    onProgress: (Float) -> Unit,
+    onProgress: suspend (Float) -> Unit,
     onEnd: (commit: Boolean) -> Unit
 ) {
     val width = size.width.toFloat().coerceAtLeast(1f)
@@ -2557,7 +2557,7 @@ private suspend fun PointerInputScope.detectIosSwipeBack(
 private fun Modifier.iosSwipeBack(
     enabled: Boolean,
     onStart: () -> Unit,
-    onProgress: (Float) -> Unit,
+    onProgress: suspend (Float) -> Unit,
     onEnd: (commit: Boolean) -> Unit
 ): Modifier = if (!enabled) this else pointerInput(Unit) {
     detectIosSwipeBack(onStart = onStart, onProgress = onProgress, onEnd = onEnd)
