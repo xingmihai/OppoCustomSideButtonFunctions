@@ -143,8 +143,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.slimenull.customsidebuttonfunctions.ui.AppSwipeBackState
-import com.slimenull.customsidebuttonfunctions.ui.appSwipeBack
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
@@ -159,8 +157,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.slimenull.customsidebuttonfunctions.data.SettingsStore
@@ -560,21 +556,12 @@ private fun CustomSideButtonApp() {
         else -> Route.Home
     }
 
-    // iOS 滑动返回状态：tracking 期间由手指直接驱动进度
-    val swipe = remember { AppSwipeBackState() }
-    // 系统预测性返回进行中时，滑动返回让位
-    var systemBackTracking by remember { mutableStateOf(false) }
-    LaunchedEffect(swipe.tracking, swipe.progress) {
-        if (swipe.tracking) predictiveProgress.snapTo(swipe.progress)
-    }
-
     val animatedShade by animateFloatAsState(
         targetValue = if (isPrimaryRoute(route)) 0f else PageShadeOpacity,
         animationSpec = tween(PageTransitionDurationMs),
         label = "Page shade"
     )
     val pageShade = when {
-        swipe.tracking -> animatedShade * (1f - swipe.progress)
         predictiveTarget != null -> animatedShade * (1f - predictiveProgress.value)
         skipCommittedReturn -> 0f
         else -> animatedShade
@@ -585,17 +572,15 @@ private fun CustomSideButtonApp() {
         label = "Primary page offset"
     )
     val rootOffset = when {
-        swipe.tracking -> -PageSlideFraction * (1f - swipe.progress)
         predictiveTarget != null -> -PageSlideFraction * (1f - predictiveProgress.value)
         skipCommittedReturn -> 0f
         else -> animatedRootOffset
     }
     val cornerDp = rememberScreenCornerRadius()
 
-    PredictiveBackHandler(enabled = !isPrimaryRoute(route) && !swipe.tracking) { progress ->
+    PredictiveBackHandler(enabled = !isPrimaryRoute(route)) { progress ->
         val destination = backDestination()
         try {
-            systemBackTracking = true
             predictiveTarget = destination
             progress.collect { event ->
                 predictiveProgress.snapTo(event.progress.coerceIn(0f, 1f))
@@ -609,7 +594,6 @@ private fun CustomSideButtonApp() {
         } catch (_: CancellationException) {
             predictiveProgress.animateTo(0f, tween(180))
         } finally {
-            systemBackTracking = false
             predictiveTarget = null
             predictiveProgress.snapTo(0f)
         }
@@ -667,28 +651,10 @@ private fun CustomSideButtonApp() {
                         displayedDetail?.let { detail ->
                             val clipDetail = predictiveTarget != null ||
                                 transition.currentState != transition.targetState
-                            Box(Modifier.fillMaxSize()
-                                .appSwipeBack(
-                                    enabled = isGlassStyle(),
-                                    direction = LocalLayoutDirection.current,
-                                    state = swipe,
-                                    systemOwnsGesture = { systemBackTracking },
-                                    anchorProgress = {
-                                        if (predictiveTarget != null) predictiveProgress.value else 0f
-                                    },
-                                    // 同步提交；放进协程会被离场页的收尾取消
-                                    onCommit = {
-                                        routeTransitionEpoch++
-                                        skipCommittedReturn = true
-                                        route = backDestination()
-                                    }
-                                )
-                                .graphicsLayer {
-                                    shape = RoundedCornerShape(cornerDp)
-                                    clip = clipDetail
-                                }
-                                .background(AppBackground)
-                            ) {
+                            Box(Modifier.fillMaxSize().graphicsLayer {
+                                shape = RoundedCornerShape(cornerDp)
+                                clip = clipDetail
+                            }.background(AppBackground)) {
                                 RouteScreen(
                                     route = detail,
                                     settings = settings,
