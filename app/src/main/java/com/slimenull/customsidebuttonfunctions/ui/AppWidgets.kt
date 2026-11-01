@@ -1,5 +1,6 @@
 package com.slimenull.customsidebuttonfunctions.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.runtime.getValue
@@ -326,6 +328,7 @@ fun AppOutlinedButton(
  *
  * [title] 为可选的上方标签，[leadingIcon] 仅在 Material 分支显示。
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> AppDropdown(
     selected: T,
