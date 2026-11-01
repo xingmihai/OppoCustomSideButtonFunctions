@@ -42,10 +42,7 @@ data class AppSettings(
     val sideVolumeUpAction: SideKeyCombinationAction = SideKeyCombinationAction.NONE,
     val sideVolumeDownAction: SideKeyCombinationAction = SideKeyCombinationAction.NONE,
     val sidePowerAction: SideKeyCombinationAction = SideKeyCombinationAction.NONE,
-    val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val uiStyle: UiStyle = UiStyle.MATERIAL3,
-    /** 是否从系统壁纸提取主色（Material You）。关闭时使用品牌蓝。 */
-    val dynamicColor: Boolean = true
+    val themeMode: ThemeMode = ThemeMode.SYSTEM
 ) {
     val hasConfiguredCombination: Boolean
         get() = combinationEnabled && listOf(sideVolumeUpAction, sideVolumeDownAction, sidePowerAction)

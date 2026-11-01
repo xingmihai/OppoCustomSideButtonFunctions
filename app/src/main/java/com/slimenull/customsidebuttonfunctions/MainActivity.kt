@@ -47,7 +47,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -66,7 +65,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Backspace
@@ -103,18 +101,12 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import io.github.neoruaa.glasmio.core.glasmioColorScheme
-import top.yukonga.miuix.kmp.basic.NavigationBarItem as MiuixNavItem
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import com.slimenull.customsidebuttonfunctions.ui.miuixColors
-import com.slimenull.customsidebuttonfunctions.ui.miuixToMaterial
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -127,7 +119,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
@@ -137,7 +128,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -171,13 +161,6 @@ import com.slimenull.customsidebuttonfunctions.model.CommonAction
 import com.slimenull.customsidebuttonfunctions.model.CursorControlMode
 import com.slimenull.customsidebuttonfunctions.model.CursorLongPressAction
 import com.slimenull.customsidebuttonfunctions.model.CustomActionSettings
-import io.github.neoruaa.glasmio.core.GlasmioTheme
-import io.github.neoruaa.glasmio.glass.GlasmioBackdropHost
-import io.github.neoruaa.glasmio.icons.GlasmioIconProvider
-import io.github.neoruaa.glasmio.icons.SfSymbol
-import io.github.neoruaa.glasmio.ui.GlasmioButton
-import io.github.neoruaa.glasmio.ui.GlasmioNavigationBar
-import io.github.neoruaa.glasmio.ui.GlasmioTabItem
 import com.slimenull.customsidebuttonfunctions.model.DeviceConfig
 import com.slimenull.customsidebuttonfunctions.model.DeviceDiagnostics
 import com.slimenull.customsidebuttonfunctions.model.MAX_CURSOR_LONG_PRESS_MS
@@ -188,8 +171,6 @@ import com.slimenull.customsidebuttonfunctions.model.MorseBinding
 import com.slimenull.customsidebuttonfunctions.model.OperationMode
 import com.slimenull.customsidebuttonfunctions.model.SideKeyCombinationAction
 import com.slimenull.customsidebuttonfunctions.model.ThemeMode
-import com.slimenull.customsidebuttonfunctions.model.UiStyle
-import com.slimenull.customsidebuttonfunctions.ui.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -204,38 +185,38 @@ private val BaseText = Color(0xFF152238)
 private val BaseMuted = Color(0xFF718198)
 
 // 以下颜色改为按当前 ColorScheme 取值，暗色模式生效后无需改动各页面调用处
-internal val AppBackground: Color
+private val AppBackground: Color
     @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.background
 
-internal val AppBlue: Color
+private val AppBlue: Color
     @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.primary
 
-internal val AppBlueDark: Color
+private val AppBlueDark: Color
     @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.onPrimaryContainer
 
-internal val AppBlueSoft: Color
+private val AppBlueSoft: Color
     @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.primaryContainer
 
-internal val AppText: Color
+private val AppText: Color
     @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.onSurface
 
-internal val AppMuted: Color
+private val AppMuted: Color
     @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
 /** 卡片等容器的填充色。 */
-internal val AppCardSurface: Color
+private val AppCardSurface: Color
     @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.surface
 
 /** 卡片内的分隔线。 */
-internal val AppDivider: Color
+private val AppDivider: Color
     @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.outlineVariant
 
 /** 次级填充面：输入框底色、提示条背景等。 */
-internal val AppSubtleSurface: Color
+private val AppSubtleSurface: Color
     @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.surfaceContainerLow
 
 /** 分段按钮未选中态的描边。 */
-internal val AppBorderSoft: Color
+private val AppBorderSoft: Color
     @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.outline
 
 private val AppGreen: Color
@@ -248,8 +229,6 @@ private val AppGreen: Color
 private const val PageShadeOpacity = 0.24f
 private const val PageSlideFraction = 0.25f
 private const val PageTransitionDurationMs = 350
-/** 玻璃底栏悬浮时，内容区需要让出的底部空间（胶囊 56dp + 底部间距 8dp + 视觉留白 16dp）。 */
-private val GlassBottomBarReserve = 80.dp
 private val AppLightColors = lightColorScheme(
     primary = BaseBlue,
     onPrimary = Color.White,
@@ -330,98 +309,11 @@ private val AppDarkColors = darkColorScheme(
 )
 
 /** 按设置决定当前生效的配色方案。 */
-/** 当前界面风格，供各页面判断该用哪套组件。 */
-val LocalUiStyle = staticCompositionLocalOf { UiStyle.MATERIAL3 }
-
 @Composable
-@ReadOnlyComposable
-internal fun isGlassStyle(): Boolean = LocalUiStyle.current == UiStyle.GLASMIO
-
-@Composable
-@ReadOnlyComposable
-internal fun isMiuixStyle(): Boolean = LocalUiStyle.current == UiStyle.MIUIX
-
-/** 页面底色。Glasmio 风格下留透明，让底层采样内容透出来供玻璃材质折射。 */
-@Composable
-private fun pageBackgroundColor(): Color =
-    if (isGlassStyle()) Color.Transparent else AppBackground
-
-/**
- * 按设置选择主题宿主：Material 3 或 Glasmio（iOS 27 Liquid Glass）。
- *
- * GlasmioTheme 内部本身就是 MaterialTheme，并提供一套 iOS 语义配色，
- * 因此页面里那些读取 MaterialTheme.colorScheme 的语义色会自动变成 iOS 颜色，
- * 无需逐个页面改动。
- */
-@Composable
-private fun AppTheme(settings: AppSettings, content: @Composable () -> Unit) {
-    val dark = when (settings.themeMode) {
-        ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
-        ThemeMode.SYSTEM -> isSystemInDarkTheme()
-    }
-    CompositionLocalProvider(LocalUiStyle provides settings.uiStyle) {
-        when (settings.uiStyle) {
-            UiStyle.MATERIAL3 -> MaterialTheme(
-                colorScheme = appColorScheme(settings.themeMode, settings.dynamicColor)
-            ) {
-                content()
-            }
-
-            UiStyle.GLASMIO -> GlasmioTheme(
-                isDark = dark,
-                colorScheme = glassBaseScheme(dark, settings.dynamicColor)
-            ) {
-                GlasmioIconProvider(resolver = AppIconResolver) {
-                GlasmioBackdropHost(
-                    modifier = Modifier.fillMaxSize(),
-                    sampledContent = {
-                        Box(Modifier.fillMaxSize().background(GlasmioTheme.colors.groupedBackground))
-                    },
-                    overlayContent = { content() }
-                )
-                }
-            }
-
-            UiStyle.MIUIX -> {
-                val colors = miuixColors(settings.themeMode, settings.dynamicColor, dark)
-                // MaterialTheme 在外：语义色读它；MiuixTheme 在内：LocalContentColor 由 Miuix 提供。
-                MaterialTheme(colorScheme = miuixToMaterial(colors, dark)) {
-                    MiuixTheme(colors = colors) {
-                        content()
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-internal fun appColorScheme(mode: ThemeMode, dynamicColor: Boolean): ColorScheme {
-    if (dynamicColor) {
-        return when (mode) {
-            ThemeMode.LIGHT -> dynamicLightColorScheme(LocalContext.current)
-            ThemeMode.DARK -> dynamicDarkColorScheme(LocalContext.current)
-            ThemeMode.SYSTEM -> if (isSystemInDarkTheme()) dynamicDarkColorScheme(LocalContext.current)
-            else dynamicLightColorScheme(LocalContext.current)
-        }
-    }
-    return when (mode) {
-        ThemeMode.LIGHT -> AppLightColors
-        ThemeMode.DARK -> AppDarkColors
-        ThemeMode.SYSTEM -> if (isSystemInDarkTheme()) AppDarkColors else AppLightColors
-    }
-}
-
-/**
- * 玻璃风格的基准配色。动态取色时用系统壁纸色板，
- * 否则用 glasmioColorScheme 的默认蓝；两者的 primary 都会成为 iOS 的 accent。
- */
-@Composable
-private fun glassBaseScheme(dark: Boolean, dynamicColor: Boolean): ColorScheme = when {
-    dynamicColor && dark -> dynamicDarkColorScheme(LocalContext.current)
-    dynamicColor -> dynamicLightColorScheme(LocalContext.current)
-    else -> glasmioColorScheme(dark)
+private fun appColorScheme(mode: ThemeMode): ColorScheme = when (mode) {
+    ThemeMode.LIGHT -> AppLightColors
+    ThemeMode.DARK -> AppDarkColors
+    ThemeMode.SYSTEM -> if (isSystemInDarkTheme()) AppDarkColors else AppLightColors
 }
 
 @StringRes
@@ -476,7 +368,6 @@ private sealed interface Route {
     data object Feedback : Route
     data object Advanced : Route
     data object Diagnostics : Route
-    data object Appearance : Route
     data class Gesture(val kind: GestureKind) : Route
 }
 
@@ -618,9 +509,9 @@ private fun CustomSideButtonApp() {
         }
     }
 
-    AppTheme(settings) {
+    MaterialTheme(colorScheme = appColorScheme(settings.themeMode)) {
         Scaffold(
-            containerColor = pageBackgroundColor()
+            containerColor = AppBackground
         ) { padding ->
             Box(Modifier.fillMaxSize().onSizeChanged { contentWidth = it.width.toFloat() }) {
                 PrimaryPageLayer(
@@ -707,127 +598,56 @@ private fun PrimaryPageLayer(
         Route.About -> BottomTab.ABOUT
         else -> BottomTab.HOME
     }
-    if (isMiuixStyle()) {
-        // Miuix 底栏是实心条，与 Material 分支同样占位排列。
-        Column(
-            Modifier.fillMaxSize()
-                .graphicsLayer { translationX = contentWidth * rootOffset }
-                .background(pageBackgroundColor())
-        ) {
-            Box(Modifier.fillMaxWidth().weight(1f)) {
-                PrimaryContent(primaryRoute, settings, navigate, persist, padding)
-            }
-            top.yukonga.miuix.kmp.basic.NavigationBar {
-                listOf(
-                    BottomTab.HOME to R.string.tab_home,
-                    BottomTab.OTHER to R.string.tab_other,
-                    BottomTab.ABOUT to R.string.tab_about
-                ).forEach { (tab, labelRes) ->
-                    MiuixNavItem(
-                        selected = selectedTab == tab,
-                        onClick = { onTabSelected(tab) },
-                        icon = when (tab) {
-                            BottomTab.HOME -> Icons.Default.Home
-                            BottomTab.OTHER -> Icons.Default.MoreHoriz
-                            BottomTab.ABOUT -> Icons.Default.Info
-                        },
-                        label = stringResource(labelRes)
-                    )
+    Column(
+        Modifier.fillMaxSize()
+            .graphicsLayer { translationX = contentWidth * rootOffset }
+            .background(AppBackground)
+    ) {
+        Box(Modifier.fillMaxWidth().weight(1f)) {
+            AnimatedContent(
+                targetState = primaryRoute,
+                modifier = Modifier.fillMaxSize(),
+                transitionSpec = {
+                    val direction = routeDirection(initialState, targetState)
+                    (slideInHorizontally(tween(PageTransitionDurationMs)) { it * direction } togetherWith
+                        slideOutHorizontally(tween(PageTransitionDurationMs)) { -it * direction })
+                        .using(SizeTransform(clip = true))
+                },
+                label = "Tab transition"
+            ) { current ->
+                val actualPadding = object : PaddingValues by padding {
+                    override fun calculateBottomPadding(): Dp = 0.dp
                 }
+
+                RouteScreen(
+                    route = current,
+                    settings = settings,
+                    navigate = navigate,
+                    persist = persist,
+                    padding = actualPadding
+                )
             }
         }
-    } else if (isGlassStyle()) {
-        // 玻璃底栏是悬浮胶囊：叠在内容之上，内容区底部让出空间避免最后一项被压住。
-        Box(
-            Modifier.fillMaxSize()
-                .graphicsLayer { translationX = contentWidth * rootOffset }
-                .background(pageBackgroundColor())
-        ) {
-            Box(Modifier.fillMaxSize().padding(bottom = GlassBottomBarReserve)) {
-                PrimaryContent(primaryRoute, settings, navigate, persist, padding)
-            }
-            val compactProgress = remember { mutableFloatStateOf(0f) }
-            GlasmioNavigationBar(
-                items = listOf(
-                    GlasmioTabItem(BottomTab.HOME, stringResource(R.string.tab_home), SfSymbol.HouseFilled),
-                    GlasmioTabItem(BottomTab.OTHER, stringResource(R.string.tab_other), SfSymbol.Ellipsis),
-                    GlasmioTabItem(BottomTab.ABOUT, stringResource(R.string.tab_about), SfSymbol.InfoCircle)
-                ),
-                selectedKey = selectedTab,
-                onSelected = onTabSelected,
-                onExpand = { compactProgress.floatValue = 0f },
-                compactProgress = compactProgress,
-                compactSize = 56.dp,
-                modifier = Modifier.align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(bottom = 8.dp)
-                    .navigationBarsPadding()
+        NavigationBar(containerColor = AppCardSurface) {
+            NavigationBarItem(
+                selected = selectedTab == BottomTab.HOME,
+                onClick = { onTabSelected(BottomTab.HOME) },
+                icon = { Icon(Icons.Default.Home, contentDescription = stringResource(R.string.tab_home)) },
+                label = { Text(stringResource(R.string.tab_home)) }
+            )
+            NavigationBarItem(
+                selected = selectedTab == BottomTab.OTHER,
+                onClick = { onTabSelected(BottomTab.OTHER) },
+                icon = { Icon(Icons.Default.MoreHoriz, contentDescription = stringResource(R.string.tab_other)) },
+                label = { Text(stringResource(R.string.tab_other)) }
+            )
+            NavigationBarItem(
+                selected = selectedTab == BottomTab.ABOUT,
+                onClick = { onTabSelected(BottomTab.ABOUT) },
+                icon = { Icon(Icons.Default.Info, contentDescription = stringResource(R.string.tab_about)) },
+                label = { Text(stringResource(R.string.tab_about)) }
             )
         }
-    } else {
-        Column(
-            Modifier.fillMaxSize()
-                .graphicsLayer { translationX = contentWidth * rootOffset }
-                .background(pageBackgroundColor())
-        ) {
-            Box(Modifier.fillMaxWidth().weight(1f)) {
-                PrimaryContent(primaryRoute, settings, navigate, persist, padding)
-            }
-            NavigationBar(containerColor = AppCardSurface) {
-                NavigationBarItem(
-                    selected = selectedTab == BottomTab.HOME,
-                    onClick = { onTabSelected(BottomTab.HOME) },
-                    icon = { AppIcon(Icons.Default.Home, contentDescription = stringResource(R.string.tab_home)) },
-                    label = { Text(stringResource(R.string.tab_home)) }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == BottomTab.OTHER,
-                    onClick = { onTabSelected(BottomTab.OTHER) },
-                    icon = { AppIcon(Icons.Default.MoreHoriz, contentDescription = stringResource(R.string.tab_other)) },
-                    label = { Text(stringResource(R.string.tab_other)) }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == BottomTab.ABOUT,
-                    onClick = { onTabSelected(BottomTab.ABOUT) },
-                    icon = { AppIcon(Icons.Default.Info, contentDescription = stringResource(R.string.tab_about)) },
-                    label = { Text(stringResource(R.string.tab_about)) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun PrimaryContent(
-    primaryRoute: Route,
-    settings: AppSettings,
-    navigate: (Route) -> Unit,
-    persist: (AppSettings) -> Unit,
-    padding: PaddingValues
-) {
-    AnimatedContent(
-        targetState = primaryRoute,
-        modifier = Modifier.fillMaxSize(),
-        transitionSpec = {
-            val direction = routeDirection(initialState, targetState)
-            (slideInHorizontally(tween(PageTransitionDurationMs)) { it * direction } togetherWith
-                slideOutHorizontally(tween(PageTransitionDurationMs)) { -it * direction })
-                .using(SizeTransform(clip = true))
-        },
-        label = "Tab transition"
-    ) { current ->
-        val actualPadding = object : PaddingValues by padding {
-            override fun calculateBottomPadding(): Dp = 0.dp
-        }
-
-        RouteScreen(
-            route = current,
-            settings = settings,
-            navigate = navigate,
-            persist = persist,
-            padding = actualPadding
-        )
     }
 }
 
@@ -862,7 +682,6 @@ private fun RouteScreen(
         Route.Feedback -> FeedbackScreen(settings, persist, { navigate(Route.Home) }, padding)
         Route.Advanced -> AdvancedScreen(settings, persist, { navigate(Route.Home) }, padding)
         Route.Diagnostics -> DiagnosticsScreen(settings, persist, { navigate(Route.Home) }, padding)
-        Route.Appearance -> AppearanceScreen(settings, persist, { navigate(Route.Home) }, padding)
         is Route.Gesture -> GestureScreen(route.kind, settings, persist, { navigate(Route.Home) }, padding)
     }
 }
@@ -889,7 +708,10 @@ private fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item {
-                AppCard {
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = AppCardSurface)
+                ) {
                     Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                         IconBadge(Icons.Default.Tune)
                         Spacer(Modifier.width(12.dp))
@@ -897,7 +719,7 @@ private fun HomeScreen(
                             Text(stringResource(R.string.enable_side_key_functions), fontWeight = FontWeight.SemiBold)
                             Text(stringResource(if (settings.enabled) R.string.status_enabled else R.string.status_disabled), style = MaterialTheme.typography.bodySmall, color = if (settings.enabled) AppGreen else AppMuted)
                         }
-                        AppSwitch(settings.enabled) { persist(settings.copy(enabled = it)) }
+                        Switch(settings.enabled, { clickSound(view); persist(settings.copy(enabled = it)) })
                     }
                 }
             }
@@ -911,11 +733,20 @@ private fun HomeScreen(
                     inactiveContentColor = AppText,
                     inactiveBorderColor = AppBorderSoft
                 )
-                AppSegmented(
-                    items = OperationMode.entries.map { it to stringResource(it.titleRes) },
-                    selected = settings.operationMode,
-                    onSelected = { persist(settings.copy(operationMode = it)) }
-                )
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    OperationMode.entries.forEachIndexed { index, mode ->
+                        SegmentedButton(
+                            selected = settings.operationMode == mode,
+                            onClick = { clickSound(view); persist(settings.copy(operationMode = mode)) },
+                            shape = SegmentedButtonDefaults.itemShape(
+                                index, OperationMode.entries.size, baseShape = RoundedCornerShape(8.dp)
+                            ),
+                            colors = modeColors,
+                            modifier = Modifier.weight(1f),
+                            label = { Text(stringResource(mode.titleRes)) }
+                        )
+                    }
+                }
             }
             item {
                 AnimatedContent(
@@ -959,11 +790,41 @@ private fun HomeScreen(
             }
             item { SectionLabel(stringResource(R.string.section_other_settings)) }
             item {
-                SettingRow(
-                    Icons.Default.Palette,
-                    stringResource(R.string.appearance_title),
-                    stringResource(R.string.appearance_desc)
-                ) { navigate(Route.Appearance) }
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            stringResource(R.string.theme_mode_title),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                            ThemeMode.entries.forEachIndexed { index, mode ->
+                                SegmentedButton(
+                                    selected = settings.themeMode == mode,
+                                    onClick = { clickSound(view); persist(settings.copy(themeMode = mode)) },
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index, ThemeMode.entries.size, baseShape = RoundedCornerShape(8.dp)
+                                    ),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = AppBlueSoft,
+                                        activeContentColor = AppBlueDark,
+                                        activeBorderColor = AppBlue,
+                                        inactiveContainerColor = AppCardSurface,
+                                        inactiveContentColor = AppText,
+                                        inactiveBorderColor = AppBorderSoft
+                                    )
+                                ) {
+                                    Text(stringResource(themeLabelRes(mode)))
+                                }
+                            }
+                        }
+                        Text(
+                            stringResource(R.string.theme_mode_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppMuted
+                        )
+                    }
+                }
             }
             item {
                 SettingRow(Icons.Default.Vibration, stringResource(R.string.setting_vibration_feedback), stringResource(R.string.setting_vibration_feedback_desc)) { navigate(Route.Feedback) }
@@ -1037,11 +898,11 @@ private fun GestureScreen(
           }
           if (kind != GestureKind.SINGLE) {
             item {
-                AppCard {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                     Column(Modifier.padding(14.dp)) {
                         Text(stringResource(if (kind == GestureKind.DOUBLE) R.string.gesture_wait_time else R.string.gesture_press_duration), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            AppSlider(
+                            Slider(
                                 value = sliderValue,
                                 onValueChange = { sliderValue = it },
                                 onValueChangeFinished = {
@@ -1101,7 +962,7 @@ private fun GestureScreen(
           }
           item { SectionLabel(stringResource(R.string.section_options)) }
           item {
-            AppCard {
+            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.padding(14.dp)) {
                     SettingSwitchRow(stringResource(R.string.option_wake_screen), null, currentWakeScreen) {
                         persist(updateWakeScreen(kind, settings, it))
@@ -1144,9 +1005,9 @@ private fun MorseScreen(
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween) {
-                    SectionLabel(stringResource(R.string.morse_command_mappings), Modifier.weight(1f))
-                    AppButton(onClick = { editing = null; editorOpen = true }) {
-                        AppIcon(Icons.Default.Add, contentDescription = null)
+                    SectionLabel(stringResource(R.string.morse_command_mappings))
+                    Button(onClick = { clickSound(view); editing = null; editorOpen = true }) {
+                        Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
                         Text(stringResource(R.string.btn_add))
                     }
@@ -1156,7 +1017,7 @@ private fun MorseScreen(
                 item { Text(stringResource(R.string.morse_no_commands), color = AppMuted, modifier = Modifier.padding(vertical = 16.dp)) }
             }
             items(settings.morseBindings, key = { it.sequence }) { binding ->
-                AppCard {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                     Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f).clickable {
                             clickSound(view)
@@ -1170,17 +1031,17 @@ private fun MorseScreen(
                                 overflow = TextOverflow.Ellipsis)
                         }
                         IconButton(onClick = { clickSound(view); editing = binding; editorOpen = true }) {
-                            AppIcon(Icons.Default.Edit, contentDescription = stringResource(R.string.action_edit_command))
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.action_edit_command))
                         }
                         IconButton(onClick = { clickSound(view); deleting = binding }) {
-                            AppIcon(Icons.Default.DeleteOutline, contentDescription = stringResource(R.string.action_delete_command))
+                            Icon(Icons.Default.DeleteOutline, contentDescription = stringResource(R.string.action_delete_command))
                         }
                     }
                 }
             }
             item { SectionLabel(stringResource(R.string.morse_key_settings)) }
             item {
-                AppCard {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                     Column(Modifier.padding(14.dp)) {
                         SettingSwitchRow(stringResource(R.string.morse_vibrate_on_press), null, settings.morsePressVibrationEnabled) {
                             persist(settings.copy(morsePressVibrationEnabled = it))
@@ -1235,17 +1096,17 @@ private fun MorseScreen(
         )
     }
     deleting?.let { binding ->
-        AppAlertDialog(
-            title = stringResource(R.string.dialog_delete_command_title, binding.sequence),
-            message = morseActionTitle(binding),
-            confirmLabel = stringResource(R.string.btn_delete),
-            onConfirm = {
-                persist(settings.copy(morseBindings = settings.morseBindings.filterNot { it.sequence == binding.sequence }))
-                deleting = null
+        AlertDialog(
+            onDismissRequest = { deleting = null },
+            title = { Text(stringResource(R.string.dialog_delete_command_title, binding.sequence)) },
+            text = { Text(morseActionTitle(binding)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    persist(settings.copy(morseBindings = settings.morseBindings.filterNot { it.sequence == binding.sequence }))
+                    deleting = null
+                }) { Text(stringResource(R.string.btn_delete)) }
             },
-            dismissLabel = stringResource(R.string.btn_cancel),
-            onDismiss = { deleting = null },
-            destructive = true
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.btn_cancel)) } }
         )
     }
 }
@@ -1256,11 +1117,11 @@ private fun MorseTimingCard(title: String, value: Long, onChange: (Long) -> Unit
     var sliderValue by remember(value) {
         mutableFloatStateOf(value.coerceIn(100L, 800L).toFloat())
     }
-    AppCard {
+    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
         Column(Modifier.padding(14.dp)) {
             Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AppSlider(
+                Slider(
                     value = sliderValue,
                     onValueChange = { sliderValue = it },
                     onValueChangeFinished = { clickSound(view); onChange(sliderValue.toLong()) },
@@ -1329,33 +1190,29 @@ private fun MorseBindingEditorDialog(
         else -> null
     }
     val selected = ActionChoice(action, if (action == ActionType.COMMON_FUNCTION) custom.commonAction else null)
-    val maxHeight = LocalConfiguration.current.screenHeightDp.dp / 2
+    val maxHeight = LocalConfiguration.current.screenHeightDp.dp * 0.85f
     val view = LocalView.current
 
     val keyShape = RoundedCornerShape(8.dp)
 
-    AppAlertDialog(
-        title = if (original == null) stringResource(R.string.dialog_add_command_title)
-        else stringResource(R.string.dialog_edit_command_title),
-        confirmLabel = stringResource(R.string.btn_save),
-        onConfirm = {
-            showError = true
-            if (errorRes == null) onSave(MorseBinding(sequence, action, custom, wakeScreen, vibrationEnabled))
-        },
-        dismissLabel = stringResource(R.string.btn_cancel),
-        onDismiss = onDismiss
-    ) {
-        Column(
-            Modifier.verticalScroll(rememberScrollState()).heightIn(max = maxHeight),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = AppBackground,
+            modifier = Modifier.fillMaxWidth().heightIn(max = maxHeight)
         ) {
-                AppTextField(
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(if (original == null) stringResource(R.string.dialog_add_command_title) else stringResource(R.string.dialog_edit_command_title),
+                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                OutlinedTextField(
                     value = sequence,
                     onValueChange = { sequence = it.filter { symbol -> symbol in "01uUdD" } },
-                    label = stringResource(R.string.morse_seq_label),
+                    label = { Text(stringResource(R.string.morse_seq_label)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+                    singleLine = true,
                     isError = showError && errorRes != null,
-                    errorText = if (showError && errorRes != null) stringResource(errorRes) else null,
+                    supportingText = if (showError && errorRes != null) { { Text(stringResource(errorRes)) } } else null,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Column(modifier = Modifier.fillMaxWidth(),
@@ -1373,7 +1230,7 @@ private fun MorseBindingEditorDialog(
                             Text(stringResource(R.string.morse_key_long_side))
                         }
                         IconButton(onClick = { clickSound(view); if (sequence.isNotEmpty()) sequence = sequence.dropLast(1) }) {
-                            AppIcon(Icons.Default.Backspace, contentDescription = stringResource(R.string.morse_key_backspace))
+                            Icon(Icons.Default.Backspace, contentDescription = stringResource(R.string.morse_key_backspace))
                         }
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1416,7 +1273,7 @@ private fun MorseBindingEditorDialog(
                     CustomActionEditor(action, custom) { custom = it }
                 }
                 SectionLabel(stringResource(R.string.section_options))
-                AppCard {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                     Column(Modifier.padding(14.dp)) {
                         SettingSwitchRow(stringResource(R.string.option_wake_screen), null, wakeScreen) { wakeScreen = it }
                         if (!globalVibrationEnabled) {
@@ -1429,6 +1286,14 @@ private fun MorseBindingEditorDialog(
                         }
                     }
                 }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) }
+                    Button(onClick = {
+                        showError = true
+                        if (errorRes == null) onSave(MorseBinding(sequence, action, custom, wakeScreen, vibrationEnabled))
+                    }) { Text(stringResource(R.string.btn_save)) }
+                }
+            }
         }
     }
 }
@@ -1444,7 +1309,7 @@ private fun FeedbackScreen(settings: AppSettings, persist: (AppSettings) -> Unit
         ) {
           item { SectionLabel(stringResource(R.string.feedback_vibration_settings)) }
           item {
-            AppCard {
+            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.padding(14.dp)) {
                     SettingSwitchRow(stringResource(R.string.option_vibrate_on_trigger), null, settings.vibrationEnabled) {
                         persist(
@@ -1456,17 +1321,18 @@ private fun FeedbackScreen(settings: AppSettings, persist: (AppSettings) -> Unit
           }
           item { SectionLabel(stringResource(R.string.feedback_toast_notifications)) }
           item {
-            AppCard {
+            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SettingSwitchRow(stringResource(R.string.feedback_show_toast), null, settings.toastEnabled) {
                         persist(
                             settings.copy(toastEnabled = it)
                         )
                     }
-                    AppTextField(
+                    OutlinedTextField(
                         value = settings.toastText,
                         onValueChange = { persist(settings.copy(toastText = it)) },
-                        label = stringResource(R.string.feedback_toast_message),
+                        label = { Text(stringResource(R.string.feedback_toast_message)) },
+                        singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -1475,15 +1341,16 @@ private fun FeedbackScreen(settings: AppSettings, persist: (AppSettings) -> Unit
           item { InfoCard(stringResource(R.string.feedback_toast_hint)) }
           item { SectionLabel(stringResource(R.string.feedback_unknown_morse_title)) }
           item {
-            AppCard {
+            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SettingSwitchRow(stringResource(R.string.feedback_unknown_morse_toast_and_vibe), null, settings.unknownMorseFeedbackEnabled) {
                         persist(settings.copy(unknownMorseFeedbackEnabled = it))
                     }
-                    AppTextField(
+                    OutlinedTextField(
                         value = settings.unknownMorseToastText,
                         onValueChange = { persist(settings.copy(unknownMorseToastText = it)) },
-                        label = stringResource(R.string.feedback_toast_message),
+                        label = { Text(stringResource(R.string.feedback_toast_message)) },
+                        singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -1510,7 +1377,7 @@ private fun OtherScreen(settings: AppSettings, persist: (AppSettings) -> Unit, p
         ) {
             item { SectionLabel(stringResource(R.string.section_key_combinations)) }
             item {
-                AppCard {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         SettingSwitchRow(
                             title = stringResource(R.string.enable_key_combinations),
@@ -1543,7 +1410,7 @@ private fun OtherScreen(settings: AppSettings, persist: (AppSettings) -> Unit, p
             }
             item { SectionLabel(stringResource(R.string.section_ime_cursor)) }
             item {
-                AppCard {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(stringResource(R.string.cursor_vol_control), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                         val cursorColors = SegmentedButtonDefaults.colors(
@@ -1554,11 +1421,26 @@ private fun OtherScreen(settings: AppSettings, persist: (AppSettings) -> Unit, p
                             inactiveContentColor = AppText,
                             inactiveBorderColor = AppBorderSoft
                         )
-                        AppSegmented(
-                            items = CursorControlMode.entries.map { it to stringResource(it.titleRes) },
-                            selected = settings.cursorControlMode,
-                            onSelected = { persist(settings.copy(cursorControlMode = it)) }
-                        )
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                            CursorControlMode.entries.forEachIndexed { index, mode ->
+                                SegmentedButton(
+                                    selected = settings.cursorControlMode == mode,
+                                    onClick = { clickSound(view); persist(settings.copy(cursorControlMode = mode)) },
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index, CursorControlMode.entries.size, baseShape = RoundedCornerShape(8.dp)
+                                    ),
+                                    colors = cursorColors,
+                                    modifier = Modifier.weight(1f),
+                                    label = {
+                                        Text(
+                                            stringResource(mode.titleRes),
+                                            maxLines = 2,
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                        )
+                                    }
+                                )
+                            }
+                        }
                         HorizontalDivider(color = AppDivider)
                         CursorLongPressPicker(settings.cursorLongPressAction) {
                             persist(settings.copy(cursorLongPressAction = it))
@@ -1601,13 +1483,47 @@ private fun SideKeyCombinationPicker(
     selected: SideKeyCombinationAction,
     onSelect: (SideKeyCombinationAction) -> Unit
 ) {
-    AppDropdown(
-        selected = selected,
-        items = SideKeyCombinationAction.entries,
-        label = { stringResource(it.titleRes) },
-        onSelected = onSelect,
-        title = title
-    )
+    val view = LocalView.current
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { clickSound(view); expanded = it },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(
+            Modifier.fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                .background(AppSubtleSurface, RoundedCornerShape(10.dp))
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(title, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(selected.titleRes), style = MaterialTheme.typography.bodySmall, color = AppMuted)
+                }
+                Icon(Icons.Default.ExpandMore, contentDescription = stringResource(R.string.select_key_combo_action), tint = AppMuted)
+            }
+        }
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            SideKeyCombinationAction.entries.forEach { action ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(action.titleRes)) },
+                    trailingIcon = if (action == selected) {
+                        { Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.label_selected), tint = AppBlue) }
+                    } else null,
+                    onClick = {
+                        clickSound(view)
+                        expanded = false
+                        onSelect(action)
+                    }
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1616,13 +1532,53 @@ private fun CursorLongPressPicker(
     selected: CursorLongPressAction,
     onSelect: (CursorLongPressAction) -> Unit
 ) {
-    AppDropdown(
-        selected = selected,
-        items = CursorLongPressAction.entries,
-        label = { stringResource(it.titleRes) },
-        onSelected = onSelect,
-        title = stringResource(R.string.cursor_long_press_action)
-    )
+    val view = LocalView.current
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { clickSound(view); expanded = it },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(
+            Modifier.fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                .background(AppSubtleSurface, RoundedCornerShape(10.dp))
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.cursor_long_press_action), fontWeight = FontWeight.SemiBold)
+                    Text(
+                        stringResource(selected.titleRes),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AppMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Icon(Icons.Default.ExpandMore, contentDescription = stringResource(R.string.select_long_press_action), tint = AppMuted)
+            }
+        }
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            CursorLongPressAction.entries.forEach { action ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(action.titleRes)) },
+                    trailingIcon = if (action == selected) {
+                        { Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.label_selected), tint = AppBlue) }
+                    } else null,
+                    onClick = {
+                        clickSound(view)
+                        expanded = false
+                        onSelect(action)
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -1641,7 +1597,7 @@ private fun CursorTimingSetting(
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            AppSlider(
+            Slider(
                 value = sliderValue,
                 onValueChange = { sliderValue = it },
                 onValueChangeFinished = {
@@ -1681,7 +1637,7 @@ private fun AdvancedScreen(settings: AppSettings, persist: (AppSettings) -> Unit
         ) {
           item { SectionLabel(stringResource(R.string.advanced_system_behavior)) }
           item {
-            AppCard {
+            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.padding(14.dp)) {
                     SettingSwitchRow(
                         stringResource(R.string.advanced_prefer_su),
@@ -1706,7 +1662,7 @@ private fun AdvancedScreen(settings: AppSettings, persist: (AppSettings) -> Unit
           }
           item { SectionLabel(stringResource(R.string.advanced_side_key)) }
           item {
-            AppCard {
+            Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     DiagnosticsLine(
                         stringResource(R.string.advanced_key_code),
@@ -1723,108 +1679,6 @@ private fun AdvancedScreen(settings: AppSettings, persist: (AppSettings) -> Unit
             }
           }
           item { InfoCard(stringResource(R.string.advanced_side_key_hint)) }
-        }
-    }
-}
-
-/**
- * 外观设置二级页面：界面风格 + 主题模式。
- *
- * 两个切换器刻意保留 Material 分段控件，不使用玻璃控件——
- * 若 iOS 风格在某台设备上渲染异常，这里始终能切回 Material 3。
- */
-@Composable
-private fun AppearanceScreen(
-    settings: AppSettings,
-    persist: (AppSettings) -> Unit,
-    back: () -> Unit,
-    padding: PaddingValues
-) {
-    val view = LocalView.current
-    Column(Modifier.fillMaxSize().padding(padding)) {
-        BackTitle(stringResource(R.string.appearance_title), back)
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            item { SectionLabel(stringResource(R.string.ui_style_title)) }
-            item {
-                AppCard {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        AppDropdown(
-                            selected = settings.uiStyle,
-                            items = UiStyle.entries.toList(),
-                            label = { style ->
-                                stringResource(
-                                    when (style) {
-                                        UiStyle.MATERIAL3 -> R.string.ui_style_material
-                                        UiStyle.GLASMIO -> R.string.ui_style_ios
-                                        UiStyle.MIUIX -> R.string.ui_style_miuix
-                                    }
-                                )
-                            },
-                            onSelected = { clickSound(view); persist(settings.copy(uiStyle = it)) },
-                            leadingIcon = Icons.Default.Palette
-                        )
-                        Text(
-                            stringResource(R.string.ui_style_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AppMuted
-                        )
-                    }
-                }
-            }
-            item { SectionLabel(stringResource(R.string.theme_mode_title)) }
-            item {
-                AppCard {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                            ThemeMode.entries.forEachIndexed { index, mode ->
-                                SegmentedButton(
-                                    selected = settings.themeMode == mode,
-                                    onClick = { clickSound(view); persist(settings.copy(themeMode = mode)) },
-                                    shape = SegmentedButtonDefaults.itemShape(
-                                        index, ThemeMode.entries.size, baseShape = RoundedCornerShape(8.dp)
-                                    ),
-                                    colors = SegmentedButtonDefaults.colors(
-                                        activeContainerColor = AppBlueSoft,
-                                        activeContentColor = AppBlueDark,
-                                        activeBorderColor = AppBlue,
-                                        inactiveContainerColor = AppCardSurface,
-                                        inactiveContentColor = AppText,
-                                        inactiveBorderColor = AppBorderSoft
-                                    )
-                                ) {
-                                    Text(stringResource(themeLabelRes(mode)))
-                                }
-                            }
-                        }
-                        Text(
-                            stringResource(R.string.theme_mode_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AppMuted
-                        )
-                    }
-                }
-            }
-            item { SectionLabel(stringResource(R.string.dynamic_color_title)) }
-            item {
-                AppCard {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        AppSwitchRow(
-                            stringResource(R.string.dynamic_color_enable),
-                            null,
-                            settings.dynamicColor
-                        ) { persist(settings.copy(dynamicColor = it)) }
-                        Text(
-                            stringResource(R.string.dynamic_color_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AppMuted
-                        )
-                    }
-                }
-            }
         }
     }
 }
@@ -1944,7 +1798,7 @@ private fun DiagnosticsScreen(
 
 @Composable
 private fun DiagnosticsCard(content: @Composable ColumnScope.() -> Unit) {
-    AppCard {
+    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
         Column(Modifier.padding(14.dp)) { content() }
     }
 }
@@ -1965,10 +1819,6 @@ private fun DiagnosticsLine(label: String, value: String) {
 @Composable
 private fun ActionChip(text: String, onClick: () -> Unit) {
     val view = LocalView.current
-    if (isGlassStyle()) {
-        GlasmioButton(onClick = { clickSound(view); onClick() }) { Text(text) }
-        return
-    }
     val shape = RoundedCornerShape(50)
     Box(
         Modifier.clip(shape).background(AppBlueSoft).clickable { clickSound(view); onClick() }
@@ -2002,7 +1852,7 @@ private fun AboutScreen(padding: PaddingValues) {
           }
            item {
              Spacer(Modifier.height(22.dp))
-             AppCard {
+             Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
                 Column(Modifier.fillMaxWidth().padding(14.dp)) {
                      Text(stringResource(R.string.about_developer), style = MaterialTheme.typography.labelMedium, color = AppMuted)
                     Text("SlimeNull Issac", modifier = Modifier.padding(top = 4.dp))
@@ -2014,25 +1864,25 @@ private fun AboutScreen(padding: PaddingValues) {
                  Modifier.fillMaxWidth(),
                  horizontalArrangement = Arrangement.spacedBy(10.dp)
              ) {
-                 AppOutlinedButton(
+                 OutlinedButton(
                      onClick = {
                          clickSound(view)
                          openExternalUrl(context, "https://www.gnu.org/licenses/lgpl-3.0.html")
                      },
                      modifier = Modifier.weight(1f)
                  ) {
-                     AppIcon(Icons.Default.Code, contentDescription = null)
+                     Icon(Icons.Default.Code, contentDescription = null)
                      Spacer(Modifier.width(6.dp))
                      Text(stringResource(R.string.about_license))
                  }
-                 AppOutlinedButton(
+                 OutlinedButton(
                      onClick = {
                          clickSound(view)
                          openExternalUrl(context, "https://github.com/SlimeNull/OppoCustomSideButtonFunctions")
                      },
                      modifier = Modifier.weight(1f)
                  ) {
-                     AppIcon(Icons.Default.OpenInNew, contentDescription = null)
+                     Icon(Icons.Default.OpenInNew, contentDescription = null)
                      Spacer(Modifier.width(6.dp))
                      Text(stringResource(R.string.about_repository))
                  }
@@ -2061,15 +1911,41 @@ private fun openExternalUrl(context: Context, url: String) {
 }
 
 @Composable
-private fun BackTitle(title: String, back: () -> Unit) = AppBackTitle(title, back)
+private fun BackTitle(title: String, back: () -> Unit) {
+    val view = LocalView.current
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = { clickSound(view); back() }) { Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.btn_back), tint = AppText) }
+        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    }
+}
 
 @Composable
-private fun SettingRow(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) =
-    AppSettingRow(title, subtitle, icon, onClick)
+private fun SettingRow(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(14.dp)
+    val view = LocalView.current
+    Card(
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = AppCardSurface),
+        modifier = Modifier.fillMaxWidth().clip(shape).clickable {
+            clickSound(view)
+            onClick()
+        }
+    ) {
+        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconBadge(icon)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.SemiBold)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AppMuted)
+            }
+            Icon(Icons.Default.ArrowForward, contentDescription = null, tint = AppMuted, modifier = Modifier.size(22.dp))
+        }
+    }
+}
 
 @Composable
 private fun IntroCard(icon: ImageVector, title: String, description: String) {
-    AppCard {
+    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             IconBadge(icon, size = 48.dp, iconSize = 26.dp)
             Spacer(Modifier.width(12.dp))
@@ -2088,13 +1964,49 @@ private fun ActionPicker(
     choices: List<ActionChoice> = actionChoices,
     onSelect: (ActionChoice) -> Unit
 ) {
-    AppDropdown(
-        selected = selected,
-        items = choices,
-        label = { stringResource(it.titleRes) },
-        onSelected = onSelect,
-        leadingIcon = selected.icon
-    )
+    val view = LocalView.current
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { clickSound(view); expanded = it },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Card(
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = AppCardSurface),
+            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconBadge(selected.icon, size = 34.dp, iconSize = 19.dp)
+                Spacer(Modifier.width(12.dp))
+                Text(stringResource(selected.titleRes), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Icon(Icons.Default.ExpandMore, contentDescription = stringResource(R.string.cd_select_action), tint = AppMuted)
+            }
+        }
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            choices.forEach { choice ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(choice.titleRes)) },
+                    leadingIcon = { Icon(choice.icon, contentDescription = null) },
+                    trailingIcon = if (choice == selected) {
+                        { Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.cd_selected), tint = AppBlue) }
+                    } else null,
+                    onClick = {
+                        clickSound(view)
+                        expanded = false
+                        onSelect(choice)
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -2102,12 +2014,12 @@ private fun ActivityPresetPicker(onSelect: (ActivityPreset) -> Unit) {
     val view = LocalView.current
     var expanded by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxWidth()) {
-        AppOutlinedButton(
+        OutlinedButton(
             onClick = { clickSound(view); expanded = !expanded },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.load_preset), modifier = Modifier.weight(1f))
-            AppIcon(Icons.Default.ExpandMore, contentDescription = stringResource(R.string.cd_select_preset))
+            Icon(Icons.Default.ExpandMore, contentDescription = stringResource(R.string.cd_select_preset))
         }
         DropdownMenu(
             expanded = expanded,
@@ -2173,10 +2085,11 @@ private fun ActivityPackagePicker(
         }
     }
 
-    AppTextField(
+    OutlinedTextField(
         value = currentPackage,
         onValueChange = onSelect,
-        label = stringResource(R.string.field_package_name),
+        label = { Text(stringResource(R.string.field_package_name)) },
+        singleLine = true,
         modifier = Modifier.fillMaxWidth(),
         trailingIcon = {
             IconButton(
@@ -2187,24 +2100,24 @@ private fun ActivityPackagePicker(
                     dialogVisible = true
                 }
             ) {
-                AppIcon(Icons.Default.Apps, contentDescription = stringResource(R.string.cd_select_app), tint = AppBlue)
+                Icon(Icons.Default.Apps, contentDescription = stringResource(R.string.cd_select_app), tint = AppBlue)
             }
         }
     )
 
     if (dialogVisible) {
-        AppAlertDialog(
-            title = stringResource(R.string.title_select_app),
-            dismissLabel = stringResource(R.string.btn_cancel),
-            onDismiss = { dialogVisible = false }
-        ) {
-            Column(Modifier.fillMaxWidth()) {
-                    AppTextField(
+        AlertDialog(
+            onDismissRequest = { dialogVisible = false },
+            title = { Text(stringResource(R.string.title_select_app)) },
+            text = {
+                Column(Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
                         value = query,
                         onValueChange = { query = it },
-                        label = stringResource(R.string.search_apps),
                         modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = { AppIcon(Icons.Default.Search, contentDescription = null, tint = AppMuted) }
+                        singleLine = true,
+                        label = { Text(stringResource(R.string.search_apps)) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
                     )
                     Spacer(Modifier.height(8.dp))
                     if (availableApps == null) {
@@ -2242,8 +2155,12 @@ private fun ActivityPackagePicker(
                             }
                         }
                     }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { dialogVisible = false }) { Text(stringResource(R.string.btn_cancel)) }
             }
-        }
+        )
     }
 }
 
@@ -2261,10 +2178,11 @@ private fun CustomActionEditor(
         }
         ActionType.XIAOBU_SHORTCUT -> {
             ParameterCard(stringResource(R.string.title_xiaobu_shortcut)) {
-                AppTextField(
+                OutlinedTextField(
                     value = custom.xiaobuShortcutId,
                     onValueChange = { onChange(custom.copy(xiaobuShortcutId = it)) },
-                    label = stringResource(R.string.field_shortcut_id),
+                    label = { Text(stringResource(R.string.field_shortcut_id)) },
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 SettingSwitchRow(
@@ -2280,8 +2198,8 @@ private fun CustomActionEditor(
                     currentPackage = custom.activityPackage,
                     onSelect = { onChange(custom.copy(activityPackage = it)) }
                 )
-                AppTextField(custom.activityClass, { onChange(custom.copy(activityClass = it)) }, label = stringResource(R.string.field_activity_class), modifier = Modifier.fillMaxWidth())
-                AppTextField(custom.activityAction, { onChange(custom.copy(activityAction = it)) }, label = stringResource(R.string.field_intent_action), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(custom.activityClass, { onChange(custom.copy(activityClass = it)) }, label = { Text(stringResource(R.string.field_activity_class)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(custom.activityAction, { onChange(custom.copy(activityAction = it)) }, label = { Text(stringResource(R.string.field_intent_action)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 SettingSwitchRow(
                     title = stringResource(R.string.launch_in_small_window),
                     description = null,
@@ -2301,21 +2219,22 @@ private fun CustomActionEditor(
         }
         ActionType.CUSTOM_URL -> {
             ParameterCard(stringResource(R.string.title_url_scheme_parameters)) {
-                AppTextField(
+                OutlinedTextField(
                     value = custom.urlScheme,
                     onValueChange = { onChange(custom.copy(urlScheme = it)) },
-                    label = stringResource(R.string.field_url_scheme),
+                    label = { Text(stringResource(R.string.field_url_scheme)) },
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         }
         ActionType.SHELL_COMMAND -> {
             ParameterCard(stringResource(R.string.title_shell_parameters)) {
-                AppTextField(
+                OutlinedTextField(
                     value = custom.shellCommand,
                     onValueChange = { onChange(custom.copy(shellCommand = it)) },
-                    label = stringResource(R.string.field_shell_command),
-                    multiLine = true,
+                    label = { Text(stringResource(R.string.field_shell_command)) },
+                    minLines = 3,
                     modifier = Modifier.fillMaxWidth()
                 )
                 SettingSwitchRow(
@@ -2331,7 +2250,7 @@ private fun CustomActionEditor(
 
 @Composable
 private fun ParameterCard(title: String, content: @Composable () -> Unit) {
-    AppCard {
+    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
             content()
@@ -2345,23 +2264,39 @@ private fun SettingSwitchRow(
     description: String?,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
-) = AppSwitchRow(title, description, checked, onCheckedChange)
-
-@Composable
-internal fun IconBadge(icon: ImageVector, size: androidx.compose.ui.unit.Dp = 40.dp, iconSize: androidx.compose.ui.unit.Dp = 21.dp) {
-    Box(Modifier.size(size).background(AppBlueSoft, CircleShape), contentAlignment = Alignment.Center) {
-        AppIcon(icon, contentDescription = null, tint = AppBlueDark, modifier = Modifier.size(iconSize))
+) {
+    val view = LocalView.current
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(title)
+            if (!description.isNullOrBlank()) {
+                Text(
+                    description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AppMuted)
+            }
+        }
+        Switch(checked, { clickSound(view); onCheckedChange(it) })
     }
 }
 
 @Composable
-private fun SectionLabel(text: String, modifier: Modifier = Modifier) = AppSectionLabel(text, modifier)
+private fun IconBadge(icon: ImageVector, size: androidx.compose.ui.unit.Dp = 40.dp, iconSize: androidx.compose.ui.unit.Dp = 21.dp) {
+    Box(Modifier.size(size).background(AppBlueSoft, CircleShape), contentAlignment = Alignment.Center) {
+        Icon(icon, contentDescription = null, tint = AppBlueDark, modifier = Modifier.size(iconSize))
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(text, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp, bottom = 2.dp))
+}
 
 @Composable
 private fun InfoCard(text: String) {
-    AppCard {
+    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppSubtleSurface)) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            AppIcon(Icons.Default.Info, contentDescription = null, tint = AppBlue)
+            Icon(Icons.Default.Info, contentDescription = null, tint = AppBlue)
             Spacer(Modifier.width(8.dp))
             Text(text, style = MaterialTheme.typography.bodySmall, color = AppBlueDark)
         }
@@ -2419,16 +2354,17 @@ private fun TimeValueEditor(
 
 @Composable
 private fun NumberField(value: String, label: String, onValueChange: (String) -> Unit) {
-    AppTextField(
+    OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = label,
+        label = { Text(label) },
+        singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = Modifier.fillMaxWidth()
     )
 }
 
-internal fun clickSound(view: View) {
+private fun clickSound(view: View) {
     view.playSoundEffect(SoundEffectConstants.CLICK)
 }
 

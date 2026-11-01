@@ -216,13 +216,12 @@ internal class ActionExecutor {
         if (internal != null) {
             runCatching {
                 val args = internal.parameterTypes.mapIndexed { index, type ->
-                    val value: Any? = when {
+                    when {
                         type == Int::class.javaPrimitiveType -> mode
                         type == String::class.java -> if (index == 1) "customsidebuttonfunctions" else "side_key"
                         type == Boolean::class.javaPrimitiveType -> false
                         else -> null
                     }
-                    value
                 }.toTypedArray()
                 internal.isAccessible = true
                 internal.invoke(audio, *args)
@@ -467,14 +466,13 @@ internal class ActionExecutor {
                 ?: return@runCatching false
             method.isAccessible = true
             val arguments = method.parameterTypes.map { type ->
-                val value: Any? = when {
+                when {
                     type == Int::class.javaPrimitiveType -> 0
                     type == Long::class.javaPrimitiveType -> 0L
                     type == Boolean::class.javaPrimitiveType -> false
                     type == String::class.java -> "side_key"
                     else -> null
                 }
-                value
             }.toTypedArray()
             method.invoke(statusBar, *arguments)
             true
