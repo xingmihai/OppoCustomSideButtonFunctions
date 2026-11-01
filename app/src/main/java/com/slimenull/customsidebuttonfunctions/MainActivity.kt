@@ -166,6 +166,7 @@ import com.slimenull.customsidebuttonfunctions.model.CursorLongPressAction
 import com.slimenull.customsidebuttonfunctions.model.CustomActionSettings
 import io.github.neoruaa.glasmio.core.GlasmioTheme
 import io.github.neoruaa.glasmio.glass.GlasmioBackdropHost
+import io.github.neoruaa.glasmio.icons.GlasmioIconProvider
 import io.github.neoruaa.glasmio.icons.SfSymbol
 import io.github.neoruaa.glasmio.ui.GlasmioButton
 import io.github.neoruaa.glasmio.ui.GlasmioNavigationBar
@@ -354,6 +355,7 @@ private fun AppTheme(settings: AppSettings, content: @Composable () -> Unit) {
             }
 
             UiStyle.GLASMIO -> GlasmioTheme(isDark = dark) {
+                GlasmioIconProvider(resolver = AppIconResolver) {
                 GlasmioBackdropHost(
                     modifier = Modifier.fillMaxSize(),
                     sampledContent = {
@@ -361,6 +363,7 @@ private fun AppTheme(settings: AppSettings, content: @Composable () -> Unit) {
                     },
                     overlayContent = { content() }
                 )
+                }
             }
         }
     }
@@ -698,19 +701,19 @@ private fun PrimaryPageLayer(
                 NavigationBarItem(
                     selected = selectedTab == BottomTab.HOME,
                     onClick = { onTabSelected(BottomTab.HOME) },
-                    icon = { Icon(Icons.Default.Home, contentDescription = stringResource(R.string.tab_home)) },
+                    icon = { AppIcon(Icons.Default.Home, contentDescription = stringResource(R.string.tab_home)) },
                     label = { Text(stringResource(R.string.tab_home)) }
                 )
                 NavigationBarItem(
                     selected = selectedTab == BottomTab.OTHER,
                     onClick = { onTabSelected(BottomTab.OTHER) },
-                    icon = { Icon(Icons.Default.MoreHoriz, contentDescription = stringResource(R.string.tab_other)) },
+                    icon = { AppIcon(Icons.Default.MoreHoriz, contentDescription = stringResource(R.string.tab_other)) },
                     label = { Text(stringResource(R.string.tab_other)) }
                 )
                 NavigationBarItem(
                     selected = selectedTab == BottomTab.ABOUT,
                     onClick = { onTabSelected(BottomTab.ABOUT) },
-                    icon = { Icon(Icons.Default.Info, contentDescription = stringResource(R.string.tab_about)) },
+                    icon = { AppIcon(Icons.Default.Info, contentDescription = stringResource(R.string.tab_about)) },
                     label = { Text(stringResource(R.string.tab_about)) }
                 )
             }
@@ -1066,7 +1069,7 @@ private fun MorseScreen(
                     horizontalArrangement = Arrangement.SpaceBetween) {
                     SectionLabel(stringResource(R.string.morse_command_mappings), Modifier.weight(1f))
                     AppButton(onClick = { editing = null; editorOpen = true }) {
-                        Icon(Icons.Default.Add, contentDescription = null)
+                        AppIcon(Icons.Default.Add, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
                         Text(stringResource(R.string.btn_add))
                     }
@@ -1090,10 +1093,10 @@ private fun MorseScreen(
                                 overflow = TextOverflow.Ellipsis)
                         }
                         IconButton(onClick = { clickSound(view); editing = binding; editorOpen = true }) {
-                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.action_edit_command))
+                            AppIcon(Icons.Default.Edit, contentDescription = stringResource(R.string.action_edit_command))
                         }
                         IconButton(onClick = { clickSound(view); deleting = binding }) {
-                            Icon(Icons.Default.DeleteOutline, contentDescription = stringResource(R.string.action_delete_command))
+                            AppIcon(Icons.Default.DeleteOutline, contentDescription = stringResource(R.string.action_delete_command))
                         }
                     }
                 }
@@ -1293,7 +1296,7 @@ private fun MorseBindingEditorDialog(
                             Text(stringResource(R.string.morse_key_long_side))
                         }
                         IconButton(onClick = { clickSound(view); if (sequence.isNotEmpty()) sequence = sequence.dropLast(1) }) {
-                            Icon(Icons.Default.Backspace, contentDescription = stringResource(R.string.morse_key_backspace))
+                            AppIcon(Icons.Default.Backspace, contentDescription = stringResource(R.string.morse_key_backspace))
                         }
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1935,7 +1938,7 @@ private fun AboutScreen(padding: PaddingValues) {
                      },
                      modifier = Modifier.weight(1f)
                  ) {
-                     Icon(Icons.Default.Code, contentDescription = null)
+                     AppIcon(Icons.Default.Code, contentDescription = null)
                      Spacer(Modifier.width(6.dp))
                      Text(stringResource(R.string.about_license))
                  }
@@ -1946,7 +1949,7 @@ private fun AboutScreen(padding: PaddingValues) {
                      },
                      modifier = Modifier.weight(1f)
                  ) {
-                     Icon(Icons.Default.OpenInNew, contentDescription = null)
+                     AppIcon(Icons.Default.OpenInNew, contentDescription = null)
                      Spacer(Modifier.width(6.dp))
                      Text(stringResource(R.string.about_repository))
                  }
@@ -2021,7 +2024,7 @@ private fun ActivityPresetPicker(onSelect: (ActivityPreset) -> Unit) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.load_preset), modifier = Modifier.weight(1f))
-            Icon(Icons.Default.ExpandMore, contentDescription = stringResource(R.string.cd_select_preset))
+            AppIcon(Icons.Default.ExpandMore, contentDescription = stringResource(R.string.cd_select_preset))
         }
         DropdownMenu(
             expanded = expanded,
@@ -2101,7 +2104,7 @@ private fun ActivityPackagePicker(
                     dialogVisible = true
                 }
             ) {
-                Icon(Icons.Default.Apps, contentDescription = stringResource(R.string.cd_select_app), tint = AppBlue)
+                AppIcon(Icons.Default.Apps, contentDescription = stringResource(R.string.cd_select_app), tint = AppBlue)
             }
         }
     )
@@ -2118,7 +2121,7 @@ private fun ActivityPackagePicker(
                         onValueChange = { query = it },
                         label = stringResource(R.string.search_apps),
                         modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AppMuted) }
+                        trailingIcon = { AppIcon(Icons.Default.Search, contentDescription = null, tint = AppMuted) }
                     )
                     Spacer(Modifier.height(8.dp))
                     if (availableApps == null) {
@@ -2264,7 +2267,7 @@ private fun SettingSwitchRow(
 @Composable
 internal fun IconBadge(icon: ImageVector, size: androidx.compose.ui.unit.Dp = 40.dp, iconSize: androidx.compose.ui.unit.Dp = 21.dp) {
     Box(Modifier.size(size).background(AppBlueSoft, CircleShape), contentAlignment = Alignment.Center) {
-        Icon(icon, contentDescription = null, tint = AppBlueDark, modifier = Modifier.size(iconSize))
+        AppIcon(icon, contentDescription = null, tint = AppBlueDark, modifier = Modifier.size(iconSize))
     }
 }
 
@@ -2275,7 +2278,7 @@ private fun SectionLabel(text: String, modifier: Modifier = Modifier) = AppSecti
 private fun InfoCard(text: String) {
     AppCard {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Info, contentDescription = null, tint = AppBlue)
+            AppIcon(Icons.Default.Info, contentDescription = null, tint = AppBlue)
             Spacer(Modifier.width(8.dp))
             Text(text, style = MaterialTheme.typography.bodySmall, color = AppBlueDark)
         }

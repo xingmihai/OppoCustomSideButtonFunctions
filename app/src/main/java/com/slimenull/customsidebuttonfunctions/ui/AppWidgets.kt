@@ -57,6 +57,34 @@ import io.github.neoruaa.glasmio.ui.GlasmioAlertDialog
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import io.github.neoruaa.glasmio.ui.GlasmioTextField
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Backspace
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.CropFree
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.RemoveCircleOutline
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.ui.graphics.Color
+import io.github.neoruaa.glasmio.icons.GlasmioIconResolver
+import io.github.neoruaa.glasmio.icons.MaterialGlasmioIconResolver
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -148,7 +176,7 @@ fun AppSettingRow(
             subtitle = subtitle,
             detail = null,
             leading = if (icon != null) {
-                { Icon(icon, contentDescription = null, modifier = Modifier.size(21.dp)) }
+                { AppIcon(icon, contentDescription = null, modifier = Modifier.size(21.dp)) }
             } else null,
             onClick = { clickSound(view); onClick() },
             showTopSeparator = false
@@ -174,7 +202,7 @@ fun AppSettingRow(
                     Text(title, fontWeight = FontWeight.SemiBold)
                     Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AppMuted)
                 }
-                Icon(
+                AppIcon(
                     Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = null,
                     tint = AppMuted,
@@ -306,7 +334,7 @@ fun AppBackTitle(title: String, back: () -> Unit) {
     } else {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { clickSound(view); back() }) {
-                Icon(
+                AppIcon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
                     tint = AppText
@@ -409,7 +437,7 @@ fun <T> AppDropdown(
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
-                    Icon(
+                    AppIcon(
                         Icons.Default.ExpandMore,
                         contentDescription = null,
                         tint = AppMuted
@@ -426,7 +454,7 @@ fun <T> AppDropdown(
                         text = { Text(label(item)) },
                         trailingIcon = if (item == selected) {
                             {
-                                Icon(
+                                AppIcon(
                                     Icons.Default.CheckCircle,
                                     contentDescription = null,
                                     tint = AppBlue
@@ -645,5 +673,95 @@ fun AppAlertDialog(
                 androidx.compose.material3.TextButton(onClick = onDismiss) { Text(dismissLabel) }
             }
         )
+    }
+}
+
+/**
+ * Material 图标 → SF Symbol 名的映射表。
+ *
+ * 只收录同时满足两条的名字：
+ * 1. 存在于 Glasmio 的 SfSymbolCatalog（提供 SF 字体后能画出真符号）；
+ * 2. 能被 AppIconResolver 解析（无字体时也能落到合理的 Material 图标）。
+ * 缺任一条都不收录——否则无字体时会退化成统一方块（默认解析器的 else 分支）。
+ */
+private fun sfNameFor(icon: ImageVector): String? = when (icon) {
+    Icons.Default.Tune -> "slider.horizontal.3"
+    Icons.Default.Code -> "chevron.left.forwardslash.chevron.right"
+    Icons.Default.VolumeUp -> "speaker.wave.2.fill"
+    Icons.Default.Info -> "info.circle"
+    Icons.Default.Settings -> "gearshape"
+    Icons.Default.Search -> "magnifyingglass"
+    Icons.Default.RemoveCircleOutline -> "minus.circle.fill"
+    Icons.Default.Palette -> "paintpalette"
+    Icons.Default.NotificationsOff -> "bell.slash"
+    Icons.Default.MoreHoriz -> "ellipsis"
+    Icons.Default.Mic -> "mic"
+    Icons.Default.Home -> "house"
+    Icons.Default.ExpandMore -> "chevron.down"
+    Icons.Default.Edit -> "pencil"
+    Icons.Default.DeleteOutline -> "trash"
+    Icons.Default.CameraAlt -> "camera"
+    Icons.AutoMirrored.Filled.ArrowForward -> "chevron.right"
+    Icons.AutoMirrored.Filled.ArrowBack -> "chevron.left"
+    Icons.Default.Apps -> "rectangle.grid.2x2"
+    Icons.Default.Add -> "plus"
+    Icons.Default.AccessTime -> "clock"
+    Icons.Default.CheckCircle -> "checkmark.circle"
+    // 以下名字默认解析器不认（会退化成方块），由 AppIconResolver 兜底成正确的 Material 图标
+    Icons.Default.FlashOn -> "bolt.fill"
+    Icons.Default.CropFree -> "viewfinder"
+    Icons.Default.BugReport -> "ladybug"
+    Icons.Default.Backspace -> "delete.left"
+    Icons.Default.Vibration -> "waveform"
+    Icons.Default.OpenInNew -> "arrow.up.right"
+    else -> null
+}
+
+/**
+ * 图标。玻璃风格下优先画 SF Symbol，Material 风格或没有对应符号名时用 Material 图标。
+ *
+ * 注意：真要画出 SF Symbols 需要宿主提供 SF Pro 字体并通过 GlasmioIconProvider 注入；
+ * 未提供字体时 SfIcon 会回落到 [AppIconResolver]，外观与 Material 一致但语义已对齐。
+ */
+@Composable
+fun AppIcon(
+    icon: ImageVector,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    tint: Color = Color.Unspecified
+) {
+    val sfName = sfNameFor(icon)
+    if (isGlassStyle() && sfName != null) {
+        SfIcon(
+            systemName = sfName,
+            contentDescription = contentDescription,
+            modifier = modifier,
+            tint = if (tint == Color.Unspecified) LocalContentColor.current else tint
+        )
+    } else {
+        Icon(icon, contentDescription, modifier, tint)
+    }
+}
+
+/**
+ * 补充 Glasmio 默认图标解析器未覆盖的符号名，避免无字体时退化成统一的方块图标。
+ * 已覆盖的名字直接委派给默认解析器。
+ */
+object AppIconResolver : GlasmioIconResolver {
+    override fun resolve(systemName: String): ImageVector = when (systemName) {
+        "bolt.fill" -> Icons.Default.FlashOn
+        "viewfinder" -> Icons.Default.CropFree
+        "ladybug" -> Icons.Default.BugReport
+        "delete.left" -> Icons.Default.Backspace
+        "waveform" -> Icons.Default.Vibration
+        "arrow.up.right" -> Icons.Default.OpenInNew
+        "minus.circle.fill" -> Icons.Default.RemoveCircleOutline
+        "checkmark.circle" -> Icons.Default.CheckCircle
+        "speaker.wave.2.fill" -> Icons.Default.VolumeUp
+        "rectangle.grid.2x2" -> Icons.Default.Apps
+        "bell.slash" -> Icons.Default.NotificationsOff
+        "chevron.left.forwardslash.chevron.right" -> Icons.Default.Code
+        "slider.horizontal.3" -> Icons.Default.Tune
+        else -> MaterialGlasmioIconResolver.resolve(systemName)
     }
 }
