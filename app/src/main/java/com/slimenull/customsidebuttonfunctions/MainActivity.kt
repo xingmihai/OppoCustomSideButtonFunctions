@@ -132,6 +132,8 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.setValue
@@ -143,6 +145,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
@@ -533,6 +538,7 @@ private fun CustomSideButtonApp() {
     var displayedDetail by remember { mutableStateOf<Route?>(null) }
     var predictiveTarget by remember { mutableStateOf<Route?>(null) }
     val predictiveProgress = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
     var routeTransitionEpoch by remember { mutableIntStateOf(0) }
     var skipCommittedReturn by remember { mutableStateOf(false) }
     var contentWidth by remember { mutableFloatStateOf(0f) }
@@ -578,21 +584,32 @@ private fun CustomSideButtonApp() {
     }
     val cornerDp = rememberScreenCornerRadius()
 
-    PredictiveBackHandler(enabled = !isPrimaryRoute(route)) { progress ->
+    // 系统预测性返回与自定义 iOS 滑动返回共用同一段收尾逻辑
+    suspend fun commitBack(destination: Route) {
+        predictiveProgress.animateTo(1f, tween(PageTransitionDurationMs))
+        // Replace the transition host at commit so it cannot retain the outgoing page.
+        routeTransitionEpoch++
+        skipCommittedReturn = true
+        route = destination
+    }
+
+    suspend fun cancelBack() {
+        predictiveProgress.animateTo(0f, tween(180))
+    }
+
+    var swipeBackActive by remember { mutableStateOf(false) }
+
+    PredictiveBackHandler(enabled = !isPrimaryRoute(route) && !swipeBackActive) { progress ->
         val destination = backDestination()
         try {
             predictiveTarget = destination
             progress.collect { event ->
                 predictiveProgress.snapTo(event.progress.coerceIn(0f, 1f))
             }
-            predictiveProgress.animateTo(1f, tween(PageTransitionDurationMs))
-            // Replace the transition host at commit so it cannot retain the outgoing page.
-            routeTransitionEpoch++
-            skipCommittedReturn = true
-            route = destination
+            commitBack(destination)
             predictiveTarget = null
         } catch (_: CancellationException) {
-            predictiveProgress.animateTo(0f, tween(180))
+            cancelBack()
         } finally {
             predictiveTarget = null
             predictiveProgress.snapTo(0f)
@@ -651,10 +668,29 @@ private fun CustomSideButtonApp() {
                         displayedDetail?.let { detail ->
                             val clipDetail = predictiveTarget != null ||
                                 transition.currentState != transition.targetState
-                            Box(Modifier.fillMaxSize().graphicsLayer {
-                                shape = RoundedCornerShape(cornerDp)
-                                clip = clipDetail
-                            }.background(AppBackground)) {
+                            Box(Modifier.fillMaxSize()
+                                .iosSwipeBack(
+                                    enabled = isGlassStyle(),
+                                    onStart = {
+                                        swipeBackActive = true
+                                        predictiveTarget = backDestination()
+                                    },
+                                    onProgress = { predictiveProgress.snapTo(it) },
+                                    onEnd = { commit ->
+                                        swipeBackActive = false
+                                        scope.launch {
+                                            if (commit) commitBack(backDestination()) else cancelBack()
+                                            predictiveTarget = null
+                                            predictiveProgress.snapTo(0f)
+                                        }
+                                    }
+                                )
+                                .graphicsLayer {
+                                    shape = RoundedCornerShape(cornerDp)
+                                    clip = clipDetail
+                                }
+                                .background(AppBackground)
+                            ) {
                                 RouteScreen(
                                     route = detail,
                                     settings = settings,
@@ -2466,4 +2502,63 @@ private fun actionIcon(action: ActionType): ImageVector = when (action) {
     ActionType.CUSTOM_ACTIVITY -> Icons.Default.Code
     ActionType.CUSTOM_URL -> Icons.Default.OpenInNew
     ActionType.SHELL_COMMAND -> Icons.Default.Code
+}
+
+/**
+ * iOS 风格的跟手滑动返回：从左边缘起手的右滑实时驱动返回动画，松手按位移或速度决定是否返回。
+ *
+ * 只认从左边缘 [edgeFraction] 范围内起手的横向拖拽，避开中间的滑块等横向控件。
+ * 拖拽期间会消费指针事件，避免与系统预测性返回重复触发。
+ */
+private suspend fun PointerInputScope.detectIosSwipeBack(
+    edgeFraction: Float = 0.3f,
+    onStart: () -> Unit,
+    onProgress: (Float) -> Unit,
+    onEnd: (commit: Boolean) -> Unit
+) {
+    val width = size.width.toFloat().coerceAtLeast(1f)
+    val commitFraction = 0.35f
+    val flingVelocity = 900f
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false)
+        if (down.position.x > width * edgeFraction) return@awaitEachGesture
+        var started = false
+        var travelled = 0f
+        var lastX = down.position.x
+        var lastDx = 0f
+        while (true) {
+            val event = awaitPointerEvent()
+            val change = event.changes.firstOrNull { it.id == down.id } ?: break
+            if (!change.pressed) {
+                if (started) {
+                    val progress = (travelled / width).coerceIn(0f, 1f)
+                    onEnd(progress >= commitFraction || lastDx * 60f >= flingVelocity)
+                }
+                break
+            }
+            val dx = change.position.x - lastX
+            lastX = change.position.x
+            lastDx = dx
+            if (!started) {
+                // 先确认是明确的右滑，再接管手势
+                if (dx > 6f) {
+                    started = true
+                    onStart()
+                } else continue
+            }
+            travelled += dx
+            change.consume()
+            onProgress((travelled / width).coerceIn(0f, 1f))
+        }
+    }
+}
+
+/** 把 [detectIosSwipeBack] 接到 Composable 上，[enabled] 为 false 时完全不挂手势。 */
+private fun Modifier.iosSwipeBack(
+    enabled: Boolean,
+    onStart: () -> Unit,
+    onProgress: (Float) -> Unit,
+    onEnd: (commit: Boolean) -> Unit
+): Modifier = if (!enabled) this else pointerInput(Unit) {
+    detectIosSwipeBack(onStart = onStart, onProgress = onProgress, onEnd = onEnd)
 }
