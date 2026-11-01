@@ -106,6 +106,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import io.github.neoruaa.glasmio.core.glasmioColorScheme
+import top.yukonga.miuix.kmp.basic.NavigationBarItem as MiuixNavItem
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import com.slimenull.customsidebuttonfunctions.ui.miuixColors
 import com.slimenull.customsidebuttonfunctions.ui.miuixToMaterial
@@ -333,7 +334,11 @@ private val AppDarkColors = darkColorScheme(
 val LocalUiStyle = staticCompositionLocalOf { UiStyle.MATERIAL3 }
 
 @Composable
+@ReadOnlyComposable
 internal fun isGlassStyle(): Boolean = LocalUiStyle.current == UiStyle.GLASMIO
+
+@Composable
+@ReadOnlyComposable
 internal fun isMiuixStyle(): Boolean = LocalUiStyle.current == UiStyle.MIUIX
 
 /** 页面底色。Glasmio 风格下留透明，让底层采样内容透出来供玻璃材质折射。 */
@@ -718,7 +723,7 @@ private fun PrimaryPageLayer(
                     BottomTab.OTHER to R.string.tab_other,
                     BottomTab.ABOUT to R.string.tab_about
                 ).forEach { (tab, labelRes) ->
-                    top.yukonga.miuix.kmp.basic.NavigationBarItem(
+                    MiuixNavItem(
                         selected = selectedTab == tab,
                         onClick = { onTabSelected(tab) },
                         icon = when (tab) {

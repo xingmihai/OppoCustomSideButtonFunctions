@@ -420,10 +420,10 @@ fun AppOutlinedButton(
     content: @Composable RowScope.() -> Unit
 ) {
     if (isMiuixStyle()) {
-        // Miuix 没有描边按钮；用 TextButton 承担次级操作。
+        // Miuix 的 TextButton 只接受字符串，无法承载图标+文字的 RowScope 内容，
+        // 次级按钮这里退化为实心 Button。
         val view = LocalView.current
-        top.yukonga.miuix.kmp.basic.TextButton(
-            text = "",
+        top.yukonga.miuix.kmp.basic.Button(
             onClick = { clickSound(view); onClick() },
             modifier = modifier
         ) { content() }
