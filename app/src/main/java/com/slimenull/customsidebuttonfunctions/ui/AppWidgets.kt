@@ -42,6 +42,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import android.R
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.Role
+import io.github.neoruaa.glasmio.core.GlasmioTheme
+import io.github.neoruaa.glasmio.ui.GlasmioAlertButtonRole
+import io.github.neoruaa.glasmio.ui.GlasmioAlertButtonSpec
+import io.github.neoruaa.glasmio.ui.GlasmioAlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -103,15 +113,16 @@ fun AppCard(
 
 /** 分组标题。Glasmio 下用 iOS 的 group title 语义样式。 */
 @Composable
-fun AppSectionLabel(text: String) {
+/** [modifier] 在与按钮同排时必须给 weight(1f)：玻璃分组标题会 fillMaxWidth，否则会把同排控件挤成零宽。 */
+fun AppSectionLabel(text: String, modifier: Modifier = Modifier) {
     if (isGlassStyle()) {
-        GlasmioPreferenceGroupTitle(title = text)
+        GlasmioPreferenceGroupTitle(title = text, modifier = modifier)
     } else {
         Text(
             text,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 6.dp, bottom = 2.dp)
+            modifier = modifier.padding(top = 6.dp, bottom = 2.dp)
         )
     }
 }
@@ -348,13 +359,19 @@ fun <T> AppDropdown(
                     fontWeight = FontWeight.SemiBold
                 )
             }
-            GlasmioPopUpButton(
-                selected = selected,
-                items = items,
-                onSelected = { clickSound(view); onSelected(it) },
-                label = label,
-                modifier = Modifier.fillMaxWidth()
-            )
+            // GlasmioMenu 的内容是普通 Column、不支持滚动，项数多时会顶出屏幕。
+            // 超过阈值改用带 LazyColumn 的 iOS 弹层（最高半屏，可滚动）。
+            if (items.size > GlassPopupItemLimit) {
+                GlassListPicker(selected, items, label, onSelected)
+            } else {
+                GlasmioPopUpButton(
+                    selected = selected,
+                    items = items,
+                    onSelected = { clickSound(view); onSelected(it) },
+                    label = label,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     } else {
         var expanded by remember { mutableStateOf(false) }
@@ -419,5 +436,90 @@ fun <T> AppDropdown(
                 }
             }
         }
+    }
+}
+
+/** 超过该数量的选项，玻璃风格改用可滚动弹层而非 iOS 弹出按钮。 */
+private const val GlassPopupItemLimit = 6
+
+/**
+ * 长列表的 iOS 风格选择器：外观沿用弹出按钮的胶囊行，展开后用带列表的弹层，
+ * 列表最高半屏且可滚动，避免项数多时顶出屏幕。
+ */
+@Composable
+private fun <T> GlassListPicker(
+    selected: T,
+    items: List<T>,
+    label: @Composable (T) -> String,
+    onSelected: (T) -> Unit
+) {
+    val view = LocalView.current
+    var expanded by remember { mutableStateOf(false) }
+    val maxHeight = LocalConfiguration.current.screenHeightDp.dp / 2
+    Row(
+        Modifier.fillMaxWidth().height(44.dp)
+            .clickable(role = androidx.compose.ui.semantics.Role.Button) { clickSound(view); expanded = true },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Text(
+            text = label(selected),
+            style = MaterialTheme.typography.bodyLarge,
+            color = GlasmioTheme.colors.accent,
+            modifier = Modifier.weight(1f)
+        )
+        SfIcon("chevron.up.chevron.down", contentDescription = null, size = 13.dp)
+    }
+    GlasmioAlertDialog(
+        visible = expanded,
+        onDismissRequest = { expanded = false },
+        title = "",
+        buttons = listOf(
+            GlasmioAlertButtonSpec(
+                stringResource(android.R.string.cancel),
+                { expanded = false },
+                GlasmioAlertButtonRole.Cancel
+            )
+        )
+    ) {
+        LazyColumn(Modifier.heightIn(max = maxHeight)) {
+            items(items.size) { index ->
+                val item = items[index]
+                GlasmioListRow(
+                    title = label(item),
+                    onClick = { clickSound(view); expanded = false; onSelected(item) },
+                    trailing = if (item == selected) {
+                        { SfIcon("checkmark", contentDescription = null, size = 16.dp) }
+                    } else null,
+                    showTopSeparator = false
+                )
+            }
+        }
+    }
+}
+
+/** 主按钮。Glasmio 下为玻璃按钮，Material 下为 Filled Button。点击音效内部处理。 */
+@Composable
+fun AppButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit
+) {
+    val view = LocalView.current
+    if (isGlassStyle()) {
+        GlasmioButton(
+            onClick = { clickSound(view); onClick() },
+            modifier = modifier,
+            enabled = enabled,
+            content = content
+        )
+    } else {
+        androidx.compose.material3.Button(
+            onClick = { clickSound(view); onClick() },
+            modifier = modifier,
+            enabled = enabled,
+            content = content
+        )
     }
 }

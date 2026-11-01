@@ -1065,8 +1065,8 @@ private fun MorseScreen(
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween) {
-                    SectionLabel(stringResource(R.string.morse_command_mappings))
-                    Button(onClick = { clickSound(view); editing = null; editorOpen = true }) {
+                    SectionLabel(stringResource(R.string.morse_command_mappings), Modifier.weight(1f))
+                    AppButton(onClick = { editing = null; editorOpen = true }) {
                         Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
                         Text(stringResource(R.string.btn_add))
@@ -2283,7 +2283,7 @@ internal fun IconBadge(icon: ImageVector, size: androidx.compose.ui.unit.Dp = 40
 }
 
 @Composable
-private fun SectionLabel(text: String) = AppSectionLabel(text)
+private fun SectionLabel(text: String, modifier: Modifier = Modifier) = AppSectionLabel(text, modifier)
 
 @Composable
 private fun InfoCard(text: String) {
