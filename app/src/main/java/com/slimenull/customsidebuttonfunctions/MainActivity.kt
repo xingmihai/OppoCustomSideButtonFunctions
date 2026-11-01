@@ -178,6 +178,7 @@ import com.slimenull.customsidebuttonfunctions.model.MorseBinding
 import com.slimenull.customsidebuttonfunctions.model.OperationMode
 import com.slimenull.customsidebuttonfunctions.model.SideKeyCombinationAction
 import com.slimenull.customsidebuttonfunctions.model.ThemeMode
+import com.slimenull.customsidebuttonfunctions.model.UiStyle
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -353,7 +354,7 @@ private fun AppTheme(settings: AppSettings, content: @Composable () -> Unit) {
                     sampledContent = {
                         Box(Modifier.fillMaxSize().background(GlasmioTheme.colors.groupedBackground))
                     },
-                    overlayContent = content
+                    overlayContent = { content() }
                 )
             }
         }
