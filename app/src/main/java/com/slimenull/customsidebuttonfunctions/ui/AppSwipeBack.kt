@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.minOf
 
 /**
  * iOS 风格滑动返回手势。

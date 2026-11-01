@@ -560,6 +560,14 @@ private fun CustomSideButtonApp() {
         else -> Route.Home
     }
 
+    // iOS 滑动返回状态：tracking 期间由手指直接驱动进度
+    val swipe = remember { AppSwipeBackState() }
+    // 系统预测性返回进行中时，滑动返回让位
+    var systemBackTracking by remember { mutableStateOf(false) }
+    LaunchedEffect(swipe.tracking, swipe.progress) {
+        if (swipe.tracking) predictiveProgress.snapTo(swipe.progress)
+    }
+
     val animatedShade by animateFloatAsState(
         targetValue = if (isPrimaryRoute(route)) 0f else PageShadeOpacity,
         animationSpec = tween(PageTransitionDurationMs),
@@ -583,14 +591,6 @@ private fun CustomSideButtonApp() {
         else -> animatedRootOffset
     }
     val cornerDp = rememberScreenCornerRadius()
-
-    // iOS 滑动返回状态：tracking 期间由手指直接驱动进度
-    val swipe = remember { AppSwipeBackState() }
-    // 系统预测性返回进行中时，滑动返回让位
-    var systemBackTracking by remember { mutableStateOf(false) }
-    LaunchedEffect(swipe.tracking, swipe.progress) {
-        if (swipe.tracking) predictiveProgress.snapTo(swipe.progress)
-    }
 
     PredictiveBackHandler(enabled = !isPrimaryRoute(route) && !swipe.tracking) { progress ->
         val destination = backDestination()
