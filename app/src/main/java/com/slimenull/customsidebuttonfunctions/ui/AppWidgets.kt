@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -281,5 +282,19 @@ fun AppBackTitle(title: String, back: () -> Unit) {
 private fun GlasmioNavigationIcon(onClick: () -> Unit) {
     androidx.compose.material3.IconButton(onClick = onClick) {
         SfIcon("chevron.left", contentDescription = null, size = 20.dp)
+    }
+}
+
+/** 次级/描边按钮。Glasmio 下用玻璃按钮，Material 下用 OutlinedButton。 */
+@Composable
+fun AppOutlinedButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit
+) {
+    if (isGlassStyle()) {
+        GlasmioButton(onClick = onClick, modifier = modifier) { content() }
+    } else {
+        androidx.compose.material3.OutlinedButton(onClick = onClick, modifier = modifier, content = content)
     }
 }
