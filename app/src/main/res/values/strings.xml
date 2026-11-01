@@ -226,4 +226,5 @@
     <string name="dynamic_color_title">动态取色</string>
     <string name="dynamic_color_enable">使用壁纸主色</string>
     <string name="dynamic_color_desc">从系统壁纸提取主色覆盖品牌蓝，两种界面风格都会跟随。需要 Android 12 及以上。</string>
+    <string name="ui_style_miuix">MIUI</string>
 </resources>

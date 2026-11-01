@@ -204,4 +204,5 @@
     <string name="dynamic_color_title">Dynamic Color</string>
     <string name="dynamic_color_enable">Use wallpaper accent</string>
     <string name="dynamic_color_desc">Take the accent color from your wallpaper instead of the brand blue. Applies to both interface styles. Requires Android 12 or newer.</string>
+    <string name="ui_style_miuix">MIUI</string>
 </resources>

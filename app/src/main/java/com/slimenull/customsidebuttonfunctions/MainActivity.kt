@@ -106,6 +106,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import io.github.neoruaa.glasmio.core.glasmioColorScheme
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.slimenull.customsidebuttonfunctions.ui.miuixColors
+import com.slimenull.customsidebuttonfunctions.ui.miuixToMaterial
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.NavigationBar
@@ -331,6 +334,7 @@ val LocalUiStyle = staticCompositionLocalOf { UiStyle.MATERIAL3 }
 
 @Composable
 internal fun isGlassStyle(): Boolean = LocalUiStyle.current == UiStyle.GLASMIO
+internal fun isMiuixStyle(): Boolean = LocalUiStyle.current == UiStyle.MIUIX
 
 /** 页面底色。Glasmio 风格下留透明，让底层采样内容透出来供玻璃材质折射。 */
 @Composable
@@ -373,12 +377,22 @@ private fun AppTheme(settings: AppSettings, content: @Composable () -> Unit) {
                 )
                 }
             }
+
+            UiStyle.MIUIX -> {
+                val colors = miuixColors(settings.themeMode, settings.dynamicColor, dark)
+                // MaterialTheme 在外：语义色读它；MiuixTheme 在内：LocalContentColor 由 Miuix 提供。
+                MaterialTheme(colorScheme = miuixToMaterial(colors, dark)) {
+                    MiuixTheme(colors = colors) {
+                        content()
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun appColorScheme(mode: ThemeMode, dynamicColor: Boolean): ColorScheme {
+internal fun appColorScheme(mode: ThemeMode, dynamicColor: Boolean): ColorScheme {
     if (dynamicColor) {
         return when (mode) {
             ThemeMode.LIGHT -> dynamicLightColorScheme(LocalContext.current)
@@ -688,7 +702,36 @@ private fun PrimaryPageLayer(
         Route.About -> BottomTab.ABOUT
         else -> BottomTab.HOME
     }
-    if (isGlassStyle()) {
+    if (isMiuixStyle()) {
+        // Miuix 底栏是实心条，与 Material 分支同样占位排列。
+        Column(
+            Modifier.fillMaxSize()
+                .graphicsLayer { translationX = contentWidth * rootOffset }
+                .background(pageBackgroundColor())
+        ) {
+            Box(Modifier.fillMaxWidth().weight(1f)) {
+                PrimaryContent(primaryRoute, settings, navigate, persist, padding)
+            }
+            top.yukonga.miuix.kmp.basic.NavigationBar {
+                listOf(
+                    BottomTab.HOME to R.string.tab_home,
+                    BottomTab.OTHER to R.string.tab_other,
+                    BottomTab.ABOUT to R.string.tab_about
+                ).forEach { (tab, labelRes) ->
+                    top.yukonga.miuix.kmp.basic.NavigationBarItem(
+                        selected = selectedTab == tab,
+                        onClick = { onTabSelected(tab) },
+                        icon = when (tab) {
+                            BottomTab.HOME -> Icons.Default.Home
+                            BottomTab.OTHER -> Icons.Default.MoreHoriz
+                            BottomTab.ABOUT -> Icons.Default.Info
+                        },
+                        label = stringResource(labelRes)
+                    )
+                }
+            }
+        }
+    } else if (isGlassStyle()) {
         // 玻璃底栏是悬浮胶囊：叠在内容之上，内容区底部让出空间避免最后一项被压住。
         Box(
             Modifier.fillMaxSize()
@@ -1723,8 +1766,11 @@ private fun AppearanceScreen(
                                 ) {
                                     Text(
                                         stringResource(
-                                            if (style == UiStyle.MATERIAL3) R.string.ui_style_material
-                                            else R.string.ui_style_ios
+                                            when (style) {
+                                                UiStyle.MATERIAL3 -> R.string.ui_style_material
+                                                UiStyle.GLASMIO -> R.string.ui_style_ios
+                                                UiStyle.MIUIX -> R.string.ui_style_miuix
+                                            }
                                         )
                                     )
                                 }

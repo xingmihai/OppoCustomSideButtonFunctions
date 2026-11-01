@@ -102,6 +102,7 @@ import com.slimenull.customsidebuttonfunctions.AppMuted
 import com.slimenull.customsidebuttonfunctions.AppText
 import com.slimenull.customsidebuttonfunctions.clickSound
 import com.slimenull.customsidebuttonfunctions.isGlassStyle
+import com.slimenull.customsidebuttonfunctions.isMiuixStyle
 import io.github.neoruaa.glasmio.icons.SfIcon
 import io.github.neoruaa.glasmio.preference.GlasmioPreferenceGroupTitle
 import io.github.neoruaa.glasmio.preference.GlasmioSwitchPreference
@@ -128,7 +129,14 @@ fun AppCard(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    if (isGlassStyle()) {
+    if (isMiuixStyle()) {
+        top.yukonga.miuix.kmp.basic.Card(
+            modifier = modifier.fillMaxWidth(),
+            onClick = onClick
+        ) {
+            Column(Modifier.fillMaxWidth()) { content() }
+        }
+    } else if (isGlassStyle()) {
         GlasmioCard(modifier = modifier.fillMaxWidth(), onClick = onClick) {
             Column(Modifier.fillMaxWidth()) { content() }
         }
@@ -149,7 +157,9 @@ fun AppCard(
 @Composable
 /** [modifier] 在与按钮同排时必须给 weight(1f)：玻璃分组标题会 fillMaxWidth，否则会把同排控件挤成零宽。 */
 fun AppSectionLabel(text: String, modifier: Modifier = Modifier) {
-    if (isGlassStyle()) {
+    if (isMiuixStyle()) {
+        top.yukonga.miuix.kmp.basic.SmallTitle(text = text, modifier = modifier.fillMaxWidth())
+    } else if (isGlassStyle()) {
         GlasmioPreferenceGroupTitle(title = text, modifier = modifier)
     } else {
         Text(
@@ -170,7 +180,16 @@ fun AppSettingRow(
     onClick: () -> Unit
 ) {
     val view = LocalView.current
-    if (isGlassStyle()) {
+    if (isMiuixStyle()) {
+        top.yukonga.miuix.kmp.preference.ArrowPreference(
+            title = title,
+            summary = subtitle,
+            startAction = if (icon != null) {
+                { AppIcon(icon, contentDescription = null, modifier = Modifier.size(21.dp)) }
+            } else null,
+            onClick = { clickSound(view); onClick() }
+        )
+    } else if (isGlassStyle()) {
         GlasmioListRow(
             title = title,
             subtitle = subtitle,
@@ -222,7 +241,14 @@ fun AppSwitchRow(
     onCheckedChange: (Boolean) -> Unit
 ) {
     val view = LocalView.current
-    if (isGlassStyle()) {
+    if (isMiuixStyle()) {
+        top.yukonga.miuix.kmp.preference.SwitchPreference(
+            checked = checked,
+            onCheckedChange = { clickSound(view); onCheckedChange(it) },
+            title = title,
+            summary = description
+        )
+    } else if (isGlassStyle()) {
         GlasmioSwitchPreference(
             title = { Text(title) },
             description = description,
@@ -252,7 +278,15 @@ fun <T> AppSegmented(
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
-    if (isGlassStyle()) {
+    if (isMiuixStyle()) {
+        val selectedIndex = items.indexOfFirst { it.first == selected }.coerceAtLeast(0)
+        top.yukonga.miuix.kmp.basic.TabRowWithContour(
+            tabs = items.map { it.second },
+            selectedTabIndex = selectedIndex,
+            onTabSelected = { clickSound(view); onSelected(items[it].first) },
+            modifier = modifier.fillMaxWidth()
+        )
+    } else if (isGlassStyle()) {
         GlasmioSegmentedControl(
             items = items,
             selected = selected,
@@ -291,7 +325,15 @@ fun AppSlider(
     onValueChangeFinished: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    if (isGlassStyle()) {
+    if (isMiuixStyle()) {
+        top.yukonga.miuix.kmp.basic.Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            onValueChangeFinished = onValueChangeFinished,
+            modifier = modifier
+        )
+    } else if (isGlassStyle()) {
         GlasmioSlider(
             value = value,
             onValueChange = onValueChange,
@@ -313,7 +355,12 @@ fun AppSlider(
 @Composable
 fun AppSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     val view = LocalView.current
-    if (isGlassStyle()) {
+    if (isMiuixStyle()) {
+        top.yukonga.miuix.kmp.basic.Switch(
+            checked = checked,
+            onCheckedChange = { clickSound(view); onCheckedChange(it) }
+        )
+    } else if (isGlassStyle()) {
         GlasmioSwitch(checked = checked, onCheckedChange = { clickSound(view); onCheckedChange(it) })
     } else {
         Switch(checked, { clickSound(view); onCheckedChange(it) })
@@ -324,7 +371,20 @@ fun AppSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
 @Composable
 fun AppBackTitle(title: String, back: () -> Unit) {
     val view = LocalView.current
-    if (isGlassStyle()) {
+    if (isMiuixStyle()) {
+        top.yukonga.miuix.kmp.basic.SmallTopAppBar(
+            title = title,
+            navigationIcon = {
+                top.yukonga.miuix.kmp.basic.IconButton(onClick = { clickSound(view); back() }) {
+                    AppIcon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        tint = AppText
+                    )
+                }
+            }
+        )
+    } else if (isGlassStyle()) {
         GlasmioTopBar(
             title = title,
             navigation = {
@@ -359,7 +419,15 @@ fun AppOutlinedButton(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit
 ) {
-    if (isGlassStyle()) {
+    if (isMiuixStyle()) {
+        // Miuix 没有描边按钮；用 TextButton 承担次级操作。
+        val view = LocalView.current
+        top.yukonga.miuix.kmp.basic.TextButton(
+            text = "",
+            onClick = { clickSound(view); onClick() },
+            modifier = modifier
+        ) { content() }
+    } else if (isGlassStyle()) {
         GlasmioButton(onClick = onClick, modifier = modifier) { content() }
     } else {
         androidx.compose.material3.OutlinedButton(onClick = onClick, modifier = modifier, content = content)
@@ -541,7 +609,13 @@ fun AppButton(
     content: @Composable RowScope.() -> Unit
 ) {
     val view = LocalView.current
-    if (isGlassStyle()) {
+    if (isMiuixStyle()) {
+        top.yukonga.miuix.kmp.basic.Button(
+            onClick = { clickSound(view); onClick() },
+            modifier = modifier,
+            enabled = enabled
+        ) { content() }
+    } else if (isGlassStyle()) {
         GlasmioButton(
             onClick = { clickSound(view); onClick() },
             modifier = modifier,
@@ -580,7 +654,26 @@ fun AppTextField(
     isError: Boolean = false,
     errorText: String? = null
 ) {
-    if (isGlassStyle() && !multiLine) {
+    if (isMiuixStyle()) {
+        Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            top.yukonga.miuix.kmp.basic.TextField(
+                value = value,
+                onValueChange = onValueChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = label,
+                useLabelAsPlaceholder = true,
+                enabled = enabled,
+                singleLine = !multiLine,
+                minLines = if (multiLine) 3 else 1,
+                keyboardOptions = keyboardOptions,
+                keyboardActions = keyboardActions,
+                trailingIcon = trailingIcon
+            )
+            if (isError && errorText != null) {
+                Text(errorText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            }
+        }
+    } else if (isGlassStyle() && !multiLine) {
         Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             GlasmioTextField(
                 value = value,
