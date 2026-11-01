@@ -201,4 +201,7 @@
     <string name="ui_style_ios">iOS Liquid Glass</string>
     <string name="appearance_title">Appearance</string>
     <string name="appearance_desc">Switch the interface style (Material 3 / iOS Liquid Glass) and the light or dark theme.</string>
+    <string name="dynamic_color_title">Dynamic Color</string>
+    <string name="dynamic_color_enable">Use wallpaper accent</string>
+    <string name="dynamic_color_desc">Take the accent color from your wallpaper instead of the brand blue. Applies to both interface styles. Requires Android 12 or newer.</string>
 </resources>

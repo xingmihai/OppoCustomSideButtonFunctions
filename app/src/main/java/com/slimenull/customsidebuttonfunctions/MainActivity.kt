@@ -103,6 +103,9 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import io.github.neoruaa.glasmio.core.glasmioColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.NavigationBar
@@ -350,11 +353,16 @@ private fun AppTheme(settings: AppSettings, content: @Composable () -> Unit) {
     }
     CompositionLocalProvider(LocalUiStyle provides settings.uiStyle) {
         when (settings.uiStyle) {
-            UiStyle.MATERIAL3 -> MaterialTheme(colorScheme = appColorScheme(settings.themeMode)) {
+            UiStyle.MATERIAL3 -> MaterialTheme(
+                colorScheme = appColorScheme(settings.themeMode, settings.dynamicColor)
+            ) {
                 content()
             }
 
-            UiStyle.GLASMIO -> GlasmioTheme(isDark = dark) {
+            UiStyle.GLASMIO -> GlasmioTheme(
+                isDark = dark,
+                colorScheme = glassBaseScheme(dark, settings.dynamicColor)
+            ) {
                 GlasmioIconProvider(resolver = AppIconResolver) {
                 GlasmioBackdropHost(
                     modifier = Modifier.fillMaxSize(),
@@ -370,10 +378,32 @@ private fun AppTheme(settings: AppSettings, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun appColorScheme(mode: ThemeMode): ColorScheme = when (mode) {
-    ThemeMode.LIGHT -> AppLightColors
-    ThemeMode.DARK -> AppDarkColors
-    ThemeMode.SYSTEM -> if (isSystemInDarkTheme()) AppDarkColors else AppLightColors
+@Composable
+private fun appColorScheme(mode: ThemeMode, dynamicColor: Boolean): ColorScheme {
+    if (dynamicColor) {
+        return when (mode) {
+            ThemeMode.LIGHT -> dynamicLightColorScheme(LocalContext.current)
+            ThemeMode.DARK -> dynamicDarkColorScheme(LocalContext.current)
+            ThemeMode.SYSTEM -> if (isSystemInDarkTheme()) dynamicDarkColorScheme(LocalContext.current)
+            else dynamicLightColorScheme(LocalContext.current)
+        }
+    }
+    return when (mode) {
+        ThemeMode.LIGHT -> AppLightColors
+        ThemeMode.DARK -> AppDarkColors
+        ThemeMode.SYSTEM -> if (isSystemInDarkTheme()) AppDarkColors else AppLightColors
+    }
+}
+
+/**
+ * 玻璃风格的基准配色。动态取色时用系统壁纸色板，
+ * 否则用 glasmioColorScheme 的默认蓝；两者的 primary 都会成为 iOS 的 accent。
+ */
+@Composable
+private fun glassBaseScheme(dark: Boolean, dynamicColor: Boolean): ColorScheme = when {
+    dynamicColor && dark -> dynamicDarkColorScheme(LocalContext.current)
+    dynamicColor -> dynamicLightColorScheme(LocalContext.current)
+    else -> glasmioColorScheme(dark)
 }
 
 @StringRes
@@ -1736,6 +1766,23 @@ private fun AppearanceScreen(
                         }
                         Text(
                             stringResource(R.string.theme_mode_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppMuted
+                        )
+                    }
+                }
+            }
+            item { SectionLabel(stringResource(R.string.dynamic_color_title)) }
+            item {
+                AppCard {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AppSwitchRow(
+                            stringResource(R.string.dynamic_color_enable),
+                            null,
+                            settings.dynamicColor
+                        ) { persist(settings.copy(dynamicColor = it)) }
+                        Text(
+                            stringResource(R.string.dynamic_color_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = AppMuted
                         )
