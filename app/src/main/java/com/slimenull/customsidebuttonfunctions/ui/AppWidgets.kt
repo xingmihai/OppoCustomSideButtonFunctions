@@ -15,6 +15,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ExpandMore
+import io.github.neoruaa.glasmio.ui.GlasmioPopUpButton
+import com.slimenull.customsidebuttonfunctions.AppBlue
+import com.slimenull.customsidebuttonfunctions.AppSubtleSurface
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -303,5 +317,105 @@ fun AppOutlinedButton(
         GlasmioButton(onClick = onClick, modifier = modifier) { content() }
     } else {
         androidx.compose.material3.OutlinedButton(onClick = onClick, modifier = modifier, content = content)
+    }
+}
+
+/**
+ * 下拉选择。Glasmio 风格下用 iOS 原生的 Pop-up Button，
+ * Material 风格下沿用 ExposedDropdownMenuBox。
+ *
+ * [title] 为可选的上方标签，[leadingIcon] 仅在 Material 分支显示。
+ */
+@Composable
+fun <T> AppDropdown(
+    selected: T,
+    items: List<T>,
+    label: @Composable (T) -> String,
+    onSelected: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    leadingIcon: ImageVector? = null
+) {
+    val view = LocalView.current
+    if (isGlassStyle()) {
+        Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (title != null) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            GlasmioPopUpButton(
+                selected = selected,
+                items = items,
+                onSelected = { clickSound(view); onSelected(it) },
+                label = label,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    } else {
+        var expanded by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { clickSound(view); expanded = it },
+            modifier = modifier.fillMaxWidth()
+        ) {
+            Box(
+                Modifier.fillMaxWidth()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                    .background(AppSubtleSurface, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+            ) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    if (leadingIcon != null) {
+                        IconBadge(leadingIcon, size = 34.dp, iconSize = 19.dp)
+                        Spacer(Modifier.width(12.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        if (title != null) {
+                            Text(title, fontWeight = FontWeight.SemiBold)
+                        }
+                        Text(
+                            label(selected),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppMuted,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    }
+                    Icon(
+                        Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        tint = AppMuted
+                    )
+                }
+            }
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                items.forEach { item ->
+                    DropdownMenuItem(
+                        text = { Text(label(item)) },
+                        trailingIcon = if (item == selected) {
+                            {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = AppBlue
+                                )
+                            }
+                        } else null,
+                        onClick = {
+                            clickSound(view)
+                            expanded = false
+                            onSelected(item)
+                        }
+                    )
+                }
+            }
+        }
     }
 }

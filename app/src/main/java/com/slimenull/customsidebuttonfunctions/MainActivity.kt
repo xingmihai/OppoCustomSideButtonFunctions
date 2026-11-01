@@ -47,6 +47,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -240,6 +241,8 @@ private val AppGreen: Color
 private const val PageShadeOpacity = 0.24f
 private const val PageSlideFraction = 0.25f
 private const val PageTransitionDurationMs = 350
+/** 玻璃底栏悬浮时，内容区需要让出的底部空间（胶囊 56dp + 底部间距 8dp + 视觉留白 16dp）。 */
+private val GlassBottomBarReserve = 80.dp
 private val AppLightColors = lightColorScheme(
     primary = BaseBlue,
     onPrimary = Color.White,
@@ -654,37 +657,16 @@ private fun PrimaryPageLayer(
         Route.About -> BottomTab.ABOUT
         else -> BottomTab.HOME
     }
-    Column(
-        Modifier.fillMaxSize()
-            .graphicsLayer { translationX = contentWidth * rootOffset }
-            .background(pageBackgroundColor())
-    ) {
-        Box(Modifier.fillMaxWidth().weight(1f)) {
-            AnimatedContent(
-                targetState = primaryRoute,
-                modifier = Modifier.fillMaxSize(),
-                transitionSpec = {
-                    val direction = routeDirection(initialState, targetState)
-                    (slideInHorizontally(tween(PageTransitionDurationMs)) { it * direction } togetherWith
-                        slideOutHorizontally(tween(PageTransitionDurationMs)) { -it * direction })
-                        .using(SizeTransform(clip = true))
-                },
-                label = "Tab transition"
-            ) { current ->
-                val actualPadding = object : PaddingValues by padding {
-                    override fun calculateBottomPadding(): Dp = 0.dp
-                }
-
-                RouteScreen(
-                    route = current,
-                    settings = settings,
-                    navigate = navigate,
-                    persist = persist,
-                    padding = actualPadding
-                )
+    if (isGlassStyle()) {
+        // 玻璃底栏是悬浮胶囊：叠在内容之上，内容区底部让出空间避免最后一项被压住。
+        Box(
+            Modifier.fillMaxSize()
+                .graphicsLayer { translationX = contentWidth * rootOffset }
+                .background(pageBackgroundColor())
+        ) {
+            Box(Modifier.fillMaxSize().padding(bottom = GlassBottomBarReserve)) {
+                PrimaryContent(primaryRoute, settings, navigate, persist, padding)
             }
-        }
-        if (isGlassStyle()) {
             val compactProgress = remember { mutableFloatStateOf(0f) }
             GlasmioNavigationBar(
                 items = listOf(
@@ -697,9 +679,22 @@ private fun PrimaryPageLayer(
                 onExpand = { compactProgress.floatValue = 0f },
                 compactProgress = compactProgress,
                 compactSize = 56.dp,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 8.dp)
+                    .navigationBarsPadding()
             )
-        } else {
+        }
+    } else {
+        Column(
+            Modifier.fillMaxSize()
+                .graphicsLayer { translationX = contentWidth * rootOffset }
+                .background(pageBackgroundColor())
+        ) {
+            Box(Modifier.fillMaxWidth().weight(1f)) {
+                PrimaryContent(primaryRoute, settings, navigate, persist, padding)
+            }
             NavigationBar(containerColor = AppCardSurface) {
                 NavigationBarItem(
                     selected = selectedTab == BottomTab.HOME,
@@ -721,6 +716,39 @@ private fun PrimaryPageLayer(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun PrimaryContent(
+    primaryRoute: Route,
+    settings: AppSettings,
+    navigate: (Route) -> Unit,
+    persist: (AppSettings) -> Unit,
+    padding: PaddingValues
+) {
+    AnimatedContent(
+        targetState = primaryRoute,
+        modifier = Modifier.fillMaxSize(),
+        transitionSpec = {
+            val direction = routeDirection(initialState, targetState)
+            (slideInHorizontally(tween(PageTransitionDurationMs)) { it * direction } togetherWith
+                slideOutHorizontally(tween(PageTransitionDurationMs)) { -it * direction })
+                .using(SizeTransform(clip = true))
+        },
+        label = "Tab transition"
+    ) { current ->
+        val actualPadding = object : PaddingValues by padding {
+            override fun calculateBottomPadding(): Dp = 0.dp
+        }
+
+        RouteScreen(
+            route = current,
+            settings = settings,
+            navigate = navigate,
+            persist = persist,
+            padding = actualPadding
+        )
     }
 }
 
@@ -1500,47 +1528,13 @@ private fun SideKeyCombinationPicker(
     selected: SideKeyCombinationAction,
     onSelect: (SideKeyCombinationAction) -> Unit
 ) {
-    val view = LocalView.current
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { clickSound(view); expanded = it },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Box(
-            Modifier.fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                .background(AppSubtleSurface, RoundedCornerShape(10.dp))
-                .padding(horizontal = 12.dp, vertical = 10.dp)
-        ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(title, fontWeight = FontWeight.SemiBold)
-                    Text(stringResource(selected.titleRes), style = MaterialTheme.typography.bodySmall, color = AppMuted)
-                }
-                Icon(Icons.Default.ExpandMore, contentDescription = stringResource(R.string.select_key_combo_action), tint = AppMuted)
-            }
-        }
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            SideKeyCombinationAction.entries.forEach { action ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(action.titleRes)) },
-                    trailingIcon = if (action == selected) {
-                        { Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.label_selected), tint = AppBlue) }
-                    } else null,
-                    onClick = {
-                        clickSound(view)
-                        expanded = false
-                        onSelect(action)
-                    }
-                )
-            }
-        }
-    }
+    AppDropdown(
+        selected = selected,
+        items = SideKeyCombinationAction.entries,
+        label = { stringResource(it.titleRes) },
+        onSelected = onSelect,
+        title = title
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1549,53 +1543,13 @@ private fun CursorLongPressPicker(
     selected: CursorLongPressAction,
     onSelect: (CursorLongPressAction) -> Unit
 ) {
-    val view = LocalView.current
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { clickSound(view); expanded = it },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Box(
-            Modifier.fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                .background(AppSubtleSurface, RoundedCornerShape(10.dp))
-                .padding(horizontal = 12.dp, vertical = 10.dp)
-        ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.cursor_long_press_action), fontWeight = FontWeight.SemiBold)
-                    Text(
-                        stringResource(selected.titleRes),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AppMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Icon(Icons.Default.ExpandMore, contentDescription = stringResource(R.string.select_long_press_action), tint = AppMuted)
-            }
-        }
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            CursorLongPressAction.entries.forEach { action ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(action.titleRes)) },
-                    trailingIcon = if (action == selected) {
-                        { Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.label_selected), tint = AppBlue) }
-                    } else null,
-                    onClick = {
-                        clickSound(view)
-                        expanded = false
-                        onSelect(action)
-                    }
-                )
-            }
-        }
-    }
+    AppDropdown(
+        selected = selected,
+        items = CursorLongPressAction.entries,
+        label = { stringResource(it.titleRes) },
+        onSelected = onSelect,
+        title = stringResource(R.string.cursor_long_press_action)
+    )
 }
 
 @Composable
@@ -2055,49 +2009,13 @@ private fun ActionPicker(
     choices: List<ActionChoice> = actionChoices,
     onSelect: (ActionChoice) -> Unit
 ) {
-    val view = LocalView.current
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { clickSound(view); expanded = it },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Card(
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = AppCardSurface),
-            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
-        ) {
-            Row(
-                Modifier.fillMaxWidth().padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconBadge(selected.icon, size = 34.dp, iconSize = 19.dp)
-                Spacer(Modifier.width(12.dp))
-                Text(stringResource(selected.titleRes), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                Icon(Icons.Default.ExpandMore, contentDescription = stringResource(R.string.cd_select_action), tint = AppMuted)
-            }
-        }
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            choices.forEach { choice ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(choice.titleRes)) },
-                    leadingIcon = { Icon(choice.icon, contentDescription = null) },
-                    trailingIcon = if (choice == selected) {
-                        { Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.cd_selected), tint = AppBlue) }
-                    } else null,
-                    onClick = {
-                        clickSound(view)
-                        expanded = false
-                        onSelect(choice)
-                    }
-                )
-            }
-        }
-    }
+    AppDropdown(
+        selected = selected,
+        items = choices,
+        label = { stringResource(it.titleRes) },
+        onSelected = onSelect,
+        leadingIcon = selected.icon
+    )
 }
 
 @Composable
@@ -2105,7 +2023,7 @@ private fun ActivityPresetPicker(onSelect: (ActivityPreset) -> Unit) {
     val view = LocalView.current
     var expanded by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxWidth()) {
-        OutlinedButton(
+        AppOutlinedButton(
             onClick = { clickSound(view); expanded = !expanded },
             modifier = Modifier.fillMaxWidth()
         ) {
