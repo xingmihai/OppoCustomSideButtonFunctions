@@ -53,6 +53,9 @@ import io.github.neoruaa.glasmio.core.GlasmioTheme
 import io.github.neoruaa.glasmio.ui.GlasmioAlertButtonRole
 import io.github.neoruaa.glasmio.ui.GlasmioAlertButtonSpec
 import io.github.neoruaa.glasmio.ui.GlasmioAlertDialog
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import io.github.neoruaa.glasmio.ui.GlasmioTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -522,6 +525,62 @@ fun AppButton(
             modifier = modifier,
             enabled = enabled,
             content = content
+        )
+    }
+}
+
+/**
+ * 文本输入框。Glasmio 风格下用 iOS 的 [GlasmioTextField]，Material 下用 [OutlinedTextField]。
+ *
+ * 两点差异需要注意：
+ * 1. GlasmioTextField 只有占位符（placeholder）没有浮动标签，因此 [label] 在其分支作为占位符。
+ * 2. GlasmioTextField 不支持多行，[multiLine] 为 true 时玻璃分支回退到 Material 输入框，
+ *    以免削弱多行输入（如 Shell 指令）——外观仍跟随 iOS 语义配色。
+ */
+@Composable
+fun AppTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    multiLine: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    isError: Boolean = false,
+    errorText: String? = null
+) {
+    if (isGlassStyle() && !multiLine) {
+        Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            GlasmioTextField(
+                value = value,
+                onValueChange = onValueChange,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = label,
+                enabled = enabled,
+                trailing = trailingIcon,
+                keyboardOptions = keyboardOptions,
+                keyboardActions = keyboardActions
+            )
+            if (isError && errorText != null) {
+                Text(errorText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            }
+        }
+    } else {
+        androidx.compose.material3.OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = modifier.fillMaxWidth(),
+            enabled = enabled,
+            label = { Text(label) },
+            singleLine = !multiLine,
+            minLines = if (multiLine) 3 else 1,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            trailingIcon = trailingIcon,
+            isError = isError,
+            supportingText = if (isError && errorText != null) { { Text(errorText) } } else null
         )
     }
 }

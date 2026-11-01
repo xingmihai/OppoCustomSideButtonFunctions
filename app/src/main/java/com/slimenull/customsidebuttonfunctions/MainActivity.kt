@@ -108,7 +108,6 @@ import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -1265,14 +1264,13 @@ private fun MorseBindingEditorDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(if (original == null) stringResource(R.string.dialog_add_command_title) else stringResource(R.string.dialog_edit_command_title),
                     style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                OutlinedTextField(
+                AppTextField(
                     value = sequence,
                     onValueChange = { sequence = it.filter { symbol -> symbol in "01uUdD" } },
-                    label = { Text(stringResource(R.string.morse_seq_label)) },
+                    label = stringResource(R.string.morse_seq_label),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-                    singleLine = true,
                     isError = showError && errorRes != null,
-                    supportingText = if (showError && errorRes != null) { { Text(stringResource(errorRes)) } } else null,
+                    errorText = if (showError && errorRes != null) stringResource(errorRes) else null,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Column(modifier = Modifier.fillMaxWidth(),
@@ -1388,11 +1386,10 @@ private fun FeedbackScreen(settings: AppSettings, persist: (AppSettings) -> Unit
                             settings.copy(toastEnabled = it)
                         )
                     }
-                    OutlinedTextField(
+                    AppTextField(
                         value = settings.toastText,
                         onValueChange = { persist(settings.copy(toastText = it)) },
-                        label = { Text(stringResource(R.string.feedback_toast_message)) },
-                        singleLine = true,
+                        label = stringResource(R.string.feedback_toast_message),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -1406,11 +1403,10 @@ private fun FeedbackScreen(settings: AppSettings, persist: (AppSettings) -> Unit
                     SettingSwitchRow(stringResource(R.string.feedback_unknown_morse_toast_and_vibe), null, settings.unknownMorseFeedbackEnabled) {
                         persist(settings.copy(unknownMorseFeedbackEnabled = it))
                     }
-                    OutlinedTextField(
+                    AppTextField(
                         value = settings.unknownMorseToastText,
                         onValueChange = { persist(settings.copy(unknownMorseToastText = it)) },
-                        label = { Text(stringResource(R.string.feedback_toast_message)) },
-                        singleLine = true,
+                        label = stringResource(R.string.feedback_toast_message),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -2094,11 +2090,10 @@ private fun ActivityPackagePicker(
         }
     }
 
-    OutlinedTextField(
+    AppTextField(
         value = currentPackage,
         onValueChange = onSelect,
-        label = { Text(stringResource(R.string.field_package_name)) },
-        singleLine = true,
+        label = stringResource(R.string.field_package_name),
         modifier = Modifier.fillMaxWidth(),
         trailingIcon = {
             IconButton(
@@ -2120,13 +2115,12 @@ private fun ActivityPackagePicker(
             title = { Text(stringResource(R.string.title_select_app)) },
             text = {
                 Column(Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
+                    AppTextField(
                         value = query,
                         onValueChange = { query = it },
+                        label = stringResource(R.string.search_apps),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        label = { Text(stringResource(R.string.search_apps)) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
+                        trailingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AppMuted) }
                     )
                     Spacer(Modifier.height(8.dp))
                     if (availableApps == null) {
@@ -2187,11 +2181,10 @@ private fun CustomActionEditor(
         }
         ActionType.XIAOBU_SHORTCUT -> {
             ParameterCard(stringResource(R.string.title_xiaobu_shortcut)) {
-                OutlinedTextField(
+                AppTextField(
                     value = custom.xiaobuShortcutId,
                     onValueChange = { onChange(custom.copy(xiaobuShortcutId = it)) },
-                    label = { Text(stringResource(R.string.field_shortcut_id)) },
-                    singleLine = true,
+                    label = stringResource(R.string.field_shortcut_id),
                     modifier = Modifier.fillMaxWidth()
                 )
                 SettingSwitchRow(
@@ -2207,8 +2200,8 @@ private fun CustomActionEditor(
                     currentPackage = custom.activityPackage,
                     onSelect = { onChange(custom.copy(activityPackage = it)) }
                 )
-                OutlinedTextField(custom.activityClass, { onChange(custom.copy(activityClass = it)) }, label = { Text(stringResource(R.string.field_activity_class)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(custom.activityAction, { onChange(custom.copy(activityAction = it)) }, label = { Text(stringResource(R.string.field_intent_action)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                AppTextField(custom.activityClass, { onChange(custom.copy(activityClass = it)) }, label = stringResource(R.string.field_activity_class), modifier = Modifier.fillMaxWidth())
+                AppTextField(custom.activityAction, { onChange(custom.copy(activityAction = it)) }, label = stringResource(R.string.field_intent_action), modifier = Modifier.fillMaxWidth())
                 SettingSwitchRow(
                     title = stringResource(R.string.launch_in_small_window),
                     description = null,
@@ -2228,22 +2221,21 @@ private fun CustomActionEditor(
         }
         ActionType.CUSTOM_URL -> {
             ParameterCard(stringResource(R.string.title_url_scheme_parameters)) {
-                OutlinedTextField(
+                AppTextField(
                     value = custom.urlScheme,
                     onValueChange = { onChange(custom.copy(urlScheme = it)) },
-                    label = { Text(stringResource(R.string.field_url_scheme)) },
-                    singleLine = true,
+                    label = stringResource(R.string.field_url_scheme),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         }
         ActionType.SHELL_COMMAND -> {
             ParameterCard(stringResource(R.string.title_shell_parameters)) {
-                OutlinedTextField(
+                AppTextField(
                     value = custom.shellCommand,
                     onValueChange = { onChange(custom.copy(shellCommand = it)) },
-                    label = { Text(stringResource(R.string.field_shell_command)) },
-                    minLines = 3,
+                    label = stringResource(R.string.field_shell_command),
+                    multiLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 SettingSwitchRow(
@@ -2347,11 +2339,10 @@ private fun TimeValueEditor(
 
 @Composable
 private fun NumberField(value: String, label: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
+    AppTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label) },
-        singleLine = true,
+        label = label,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = Modifier.fillMaxWidth()
     )
