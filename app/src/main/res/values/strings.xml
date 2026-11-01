@@ -217,4 +217,8 @@
     <string name="theme_mode_system">跟随系统</string>
     <string name="theme_mode_light">浅色</string>
     <string name="theme_mode_dark">深色</string>
+    <string name="ui_style_title">界面风格</string>
+    <string name="ui_style_desc">Material 3 为 Android 原生外观；iOS 液态玻璃为 Glasmio 提供的 iOS 27 风格，含玻璃材质与 iOS 语义配色。</string>
+    <string name="ui_style_material">Material 3</string>
+    <string name="ui_style_ios">iOS 液态玻璃</string>
 </resources>

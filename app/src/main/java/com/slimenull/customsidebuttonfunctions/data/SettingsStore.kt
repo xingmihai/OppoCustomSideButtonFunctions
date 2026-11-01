@@ -20,6 +20,7 @@ import com.slimenull.customsidebuttonfunctions.model.MorseBinding
 import com.slimenull.customsidebuttonfunctions.model.OperationMode
 import com.slimenull.customsidebuttonfunctions.model.SideKeyCombinationAction
 import com.slimenull.customsidebuttonfunctions.model.ThemeMode
+import com.slimenull.customsidebuttonfunctions.model.UiStyle
 import com.slimenull.customsidebuttonfunctions.onXposedFailure
 import com.slimenull.customsidebuttonfunctions.xposed.XposedBridge
 import io.github.libxposed.service.XposedService
@@ -45,6 +46,7 @@ object SettingsStore {
 
     private const val KEY_ENABLED = "enabled"
     private const val KEY_THEME_MODE = "theme_mode"
+    private const val KEY_UI_STYLE = "ui_style"
     private const val KEY_LONG_PRESS_MS = "long_press_ms"
     private const val KEY_DOUBLE_WINDOW_MS = "double_click_window_ms"
     private const val KEY_SINGLE_ACTION = "single_action"
@@ -196,6 +198,7 @@ object SettingsStore {
         preferences(context).edit()
             .putBoolean(KEY_ENABLED, settings.enabled)
             .putString(KEY_THEME_MODE, settings.themeMode.name)
+            .putString(KEY_UI_STYLE, settings.uiStyle.name)
             .putLong(KEY_LONG_PRESS_MS, settings.longPressMs)
             .putLong(KEY_DOUBLE_WINDOW_MS, settings.doubleClickWindowMs)
             .putString(KEY_SINGLE_ACTION, settings.singleAction.name)
@@ -239,6 +242,7 @@ object SettingsStore {
     fun fromPreferences(preferences: SharedPreferences): AppSettings = AppSettings(
         enabled = preferences.getBoolean(KEY_ENABLED, true),
         themeMode = runCatching { ThemeMode.valueOf(preferences.getString(KEY_THEME_MODE, null) ?: ThemeMode.SYSTEM.name) }.getOrDefault(ThemeMode.SYSTEM),
+        uiStyle = runCatching { UiStyle.valueOf(preferences.getString(KEY_UI_STYLE, null) ?: UiStyle.MATERIAL3.name) }.getOrDefault(UiStyle.MATERIAL3),
         longPressMs = preferences.getLong(KEY_LONG_PRESS_MS, 300L).coerceIn(100L, 800L),
         doubleClickWindowMs = preferences.getLong(KEY_DOUBLE_WINDOW_MS, 300L).coerceIn(100L, 800L),
         singleAction = action(preferences.getString(KEY_SINGLE_ACTION, null)),
@@ -319,6 +323,7 @@ object SettingsStore {
     internal fun toJson(settings: AppSettings): JSONObject = JSONObject().apply {
         put(KEY_ENABLED, settings.enabled)
         put(KEY_THEME_MODE, settings.themeMode.name)
+        put(KEY_UI_STYLE, settings.uiStyle.name)
         put(KEY_LONG_PRESS_MS, settings.longPressMs)
         put(KEY_DOUBLE_WINDOW_MS, settings.doubleClickWindowMs)
         put(KEY_SINGLE_ACTION, settings.singleAction.name)
@@ -362,6 +367,7 @@ object SettingsStore {
     internal fun fromJson(json: JSONObject): AppSettings = AppSettings(
         enabled = json.optBoolean(KEY_ENABLED, true),
         themeMode = runCatching { ThemeMode.valueOf(optionalString(json, KEY_THEME_MODE) ?: ThemeMode.SYSTEM.name) }.getOrDefault(ThemeMode.SYSTEM),
+        uiStyle = runCatching { UiStyle.valueOf(optionalString(json, KEY_UI_STYLE) ?: UiStyle.MATERIAL3.name) }.getOrDefault(UiStyle.MATERIAL3),
         longPressMs = json.optLong(KEY_LONG_PRESS_MS, 300L).coerceIn(100L, 800L),
         doubleClickWindowMs = json.optLong(KEY_DOUBLE_WINDOW_MS, 300L).coerceIn(100L, 800L),
         singleAction = action(optionalString(json, KEY_SINGLE_ACTION)),

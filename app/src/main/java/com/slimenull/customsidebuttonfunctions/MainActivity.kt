@@ -119,6 +119,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
@@ -128,6 +129,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -161,6 +163,11 @@ import com.slimenull.customsidebuttonfunctions.model.CommonAction
 import com.slimenull.customsidebuttonfunctions.model.CursorControlMode
 import com.slimenull.customsidebuttonfunctions.model.CursorLongPressAction
 import com.slimenull.customsidebuttonfunctions.model.CustomActionSettings
+import io.github.neoruaa.glasmio.core.GlasmioTheme
+import io.github.neoruaa.glasmio.glass.GlasmioBackdropHost
+import io.github.neoruaa.glasmio.icons.SfSymbol
+import io.github.neoruaa.glasmio.ui.GlasmioNavigationBar
+import io.github.neoruaa.glasmio.ui.GlasmioTabItem
 import com.slimenull.customsidebuttonfunctions.model.DeviceConfig
 import com.slimenull.customsidebuttonfunctions.model.DeviceDiagnostics
 import com.slimenull.customsidebuttonfunctions.model.MAX_CURSOR_LONG_PRESS_MS
@@ -309,6 +316,50 @@ private val AppDarkColors = darkColorScheme(
 )
 
 /** 按设置决定当前生效的配色方案。 */
+/** 当前界面风格，供各页面判断该用哪套组件。 */
+val LocalUiStyle = staticCompositionLocalOf { UiStyle.MATERIAL3 }
+
+@Composable
+private fun isGlassStyle(): Boolean = LocalUiStyle.current == UiStyle.GLASMIO
+
+/** 页面底色。Glasmio 风格下留透明，让底层采样内容透出来供玻璃材质折射。 */
+@Composable
+private fun pageBackgroundColor(): Color =
+    if (isGlassStyle()) Color.Transparent else AppBackground
+
+/**
+ * 按设置选择主题宿主：Material 3 或 Glasmio（iOS 27 Liquid Glass）。
+ *
+ * GlasmioTheme 内部本身就是 MaterialTheme，并提供一套 iOS 语义配色，
+ * 因此页面里那些读取 MaterialTheme.colorScheme 的语义色会自动变成 iOS 颜色，
+ * 无需逐个页面改动。
+ */
+@Composable
+private fun AppTheme(settings: AppSettings, content: @Composable () -> Unit) {
+    val dark = when (settings.themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
+    CompositionLocalProvider(LocalUiStyle provides settings.uiStyle) {
+        when (settings.uiStyle) {
+            UiStyle.MATERIAL3 -> MaterialTheme(colorScheme = appColorScheme(settings.themeMode)) {
+                content()
+            }
+
+            UiStyle.GLASMIO -> GlasmioTheme(isDark = dark) {
+                GlasmioBackdropHost(
+                    modifier = Modifier.fillMaxSize(),
+                    sampledContent = {
+                        Box(Modifier.fillMaxSize().background(GlasmioTheme.colors.groupedBackground))
+                    },
+                    overlayContent = content
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun appColorScheme(mode: ThemeMode): ColorScheme = when (mode) {
     ThemeMode.LIGHT -> AppLightColors
@@ -509,9 +560,9 @@ private fun CustomSideButtonApp() {
         }
     }
 
-    MaterialTheme(colorScheme = appColorScheme(settings.themeMode)) {
+    AppTheme(settings) {
         Scaffold(
-            containerColor = AppBackground
+            containerColor = pageBackgroundColor()
         ) { padding ->
             Box(Modifier.fillMaxSize().onSizeChanged { contentWidth = it.width.toFloat() }) {
                 PrimaryPageLayer(
@@ -601,7 +652,7 @@ private fun PrimaryPageLayer(
     Column(
         Modifier.fillMaxSize()
             .graphicsLayer { translationX = contentWidth * rootOffset }
-            .background(AppBackground)
+            .background(pageBackgroundColor())
     ) {
         Box(Modifier.fillMaxWidth().weight(1f)) {
             AnimatedContent(
@@ -628,25 +679,42 @@ private fun PrimaryPageLayer(
                 )
             }
         }
-        NavigationBar(containerColor = AppCardSurface) {
-            NavigationBarItem(
-                selected = selectedTab == BottomTab.HOME,
-                onClick = { onTabSelected(BottomTab.HOME) },
-                icon = { Icon(Icons.Default.Home, contentDescription = stringResource(R.string.tab_home)) },
-                label = { Text(stringResource(R.string.tab_home)) }
+        if (isGlassStyle()) {
+            val compactProgress = remember { mutableFloatStateOf(0f) }
+            GlasmioNavigationBar(
+                items = listOf(
+                    GlasmioTabItem(BottomTab.HOME, stringResource(R.string.tab_home), SfSymbol.HouseFilled),
+                    GlasmioTabItem(BottomTab.OTHER, stringResource(R.string.tab_other), SfSymbol.Ellipsis),
+                    GlasmioTabItem(BottomTab.ABOUT, stringResource(R.string.tab_about), SfSymbol.InfoCircle)
+                ),
+                selectedKey = selectedTab,
+                onSelected = onTabSelected,
+                onExpand = { compactProgress.floatValue = 0f },
+                compactProgress = compactProgress,
+                compactSize = 56.dp,
+                modifier = Modifier.fillMaxWidth()
             )
-            NavigationBarItem(
-                selected = selectedTab == BottomTab.OTHER,
-                onClick = { onTabSelected(BottomTab.OTHER) },
-                icon = { Icon(Icons.Default.MoreHoriz, contentDescription = stringResource(R.string.tab_other)) },
-                label = { Text(stringResource(R.string.tab_other)) }
-            )
-            NavigationBarItem(
-                selected = selectedTab == BottomTab.ABOUT,
-                onClick = { onTabSelected(BottomTab.ABOUT) },
-                icon = { Icon(Icons.Default.Info, contentDescription = stringResource(R.string.tab_about)) },
-                label = { Text(stringResource(R.string.tab_about)) }
-            )
+        } else {
+            NavigationBar(containerColor = AppCardSurface) {
+                NavigationBarItem(
+                    selected = selectedTab == BottomTab.HOME,
+                    onClick = { onTabSelected(BottomTab.HOME) },
+                    icon = { Icon(Icons.Default.Home, contentDescription = stringResource(R.string.tab_home)) },
+                    label = { Text(stringResource(R.string.tab_home)) }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == BottomTab.OTHER,
+                    onClick = { onTabSelected(BottomTab.OTHER) },
+                    icon = { Icon(Icons.Default.MoreHoriz, contentDescription = stringResource(R.string.tab_other)) },
+                    label = { Text(stringResource(R.string.tab_other)) }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == BottomTab.ABOUT,
+                    onClick = { onTabSelected(BottomTab.ABOUT) },
+                    icon = { Icon(Icons.Default.Info, contentDescription = stringResource(R.string.tab_about)) },
+                    label = { Text(stringResource(R.string.tab_about)) }
+                )
+            }
         }
     }
 }
@@ -785,6 +853,39 @@ private fun HomeScreen(
                                 }
                             }
                         }
+                    }
+                }
+            }
+            item { SectionLabel(stringResource(R.string.ui_style_title)) }
+            item {
+                Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = AppCardSurface)) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                            UiStyle.entries.forEachIndexed { index, style ->
+                                SegmentedButton(
+                                    selected = settings.uiStyle == style,
+                                    onClick = { clickSound(view); persist(settings.copy(uiStyle = style)) },
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index, UiStyle.entries.size, baseShape = RoundedCornerShape(8.dp)
+                                    ),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = AppBlueSoft,
+                                        activeContentColor = AppBlueDark,
+                                        activeBorderColor = AppBlue,
+                                        inactiveContainerColor = AppCardSurface,
+                                        inactiveContentColor = AppText,
+                                        inactiveBorderColor = AppBorderSoft
+                                    )
+                                ) {
+                                    Text(stringResource(if (style == UiStyle.MATERIAL3) R.string.ui_style_material else R.string.ui_style_ios))
+                                }
+                            }
+                        }
+                        Text(
+                            stringResource(R.string.ui_style_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppMuted
+                        )
                     }
                 }
             }

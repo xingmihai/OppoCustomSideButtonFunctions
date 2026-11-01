@@ -123,6 +123,12 @@ dependencies {
     compileOnly("io.github.libxposed:api:102.0.0")
     implementation("io.github.libxposed:service:102.0.0")
 
+    // Glasmio：iOS 27 Liquid Glass 界面（可选风格，与 Material 3 并存）
+    // glasmio-scaffold 会传递依赖 glasmio-ui / glasmio-glass / glasmio-core / glasmio-icons
+    implementation("io.github.neoruaa.glasmio:glasmio-scaffold:0.1.1")
+    implementation("io.github.neoruaa.glasmio:glasmio-preference:0.1.1")
+    implementation("io.github.neoruaa.glasmio:glasmio-icons:0.1.1")
+
     // Shizuku is used from the application process before falling back to the existing su path.
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")
