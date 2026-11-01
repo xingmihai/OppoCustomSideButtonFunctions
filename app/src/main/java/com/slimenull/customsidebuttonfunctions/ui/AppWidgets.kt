@@ -19,6 +19,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import io.github.neoruaa.glasmio.ui.GlasmioButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -194,15 +198,15 @@ fun <T> AppSegmented(
             height = 36.dp
         )
     } else {
-        androidx.compose.material3.SingleChoiceSegmentedButtonRow(modifier.fillMaxWidth()) {
+        SingleChoiceSegmentedButtonRow(modifier.fillMaxWidth()) {
             items.forEachIndexed { index, (value, label) ->
-                androidx.compose.material3.SegmentedButton(
+                SegmentedButton(
                     selected = selected == value,
                     onClick = { clickSound(view); onSelected(value) },
-                    shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(
+                    shape = SegmentedButtonDefaults.itemShape(
                         index, items.size, baseShape = RoundedCornerShape(8.dp)
                     ),
-                    colors = androidx.compose.material3.SegmentedButtonDefaults.colors(
+                    colors = SegmentedButtonDefaults.colors(
                         activeContainerColor = AppBlueSoft,
                         activeContentColor = AppBlueDark,
                         activeBorderColor = MaterialTheme.colorScheme.primary,
