@@ -378,7 +378,6 @@ private fun AppTheme(settings: AppSettings, content: @Composable () -> Unit) {
 }
 
 @Composable
-@Composable
 private fun appColorScheme(mode: ThemeMode, dynamicColor: Boolean): ColorScheme {
     if (dynamicColor) {
         return when (mode) {
