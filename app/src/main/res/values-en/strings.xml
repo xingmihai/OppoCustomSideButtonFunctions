@@ -199,4 +199,6 @@
     <string name="ui_style_desc">Material 3 is the native Android look. iOS Liquid Glass is Glasmio iOS 27 style with glass materials and iOS semantic colors.</string>
     <string name="ui_style_material">Material 3</string>
     <string name="ui_style_ios">iOS Liquid Glass</string>
+    <string name="appearance_title">Appearance</string>
+    <string name="appearance_desc">Switch the interface style (Material 3 / iOS Liquid Glass) and the light or dark theme.</string>
 </resources>

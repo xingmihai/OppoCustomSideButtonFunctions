@@ -65,6 +65,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Backspace
@@ -422,6 +423,7 @@ private sealed interface Route {
     data object Feedback : Route
     data object Advanced : Route
     data object Diagnostics : Route
+    data object Appearance : Route
     data class Gesture(val kind: GestureKind) : Route
 }
 
@@ -753,6 +755,7 @@ private fun RouteScreen(
         Route.Feedback -> FeedbackScreen(settings, persist, { navigate(Route.Home) }, padding)
         Route.Advanced -> AdvancedScreen(settings, persist, { navigate(Route.Home) }, padding)
         Route.Diagnostics -> DiagnosticsScreen(settings, persist, { navigate(Route.Home) }, padding)
+        Route.Appearance -> AppearanceScreen(settings, persist, { navigate(Route.Home) }, padding)
         is Route.Gesture -> GestureScreen(route.kind, settings, persist, { navigate(Route.Home) }, padding)
     }
 }
@@ -847,76 +850,13 @@ private fun HomeScreen(
                     }
                 }
             }
-            item { SectionLabel(stringResource(R.string.ui_style_title)) }
-            item {
-                AppCard {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                            UiStyle.entries.forEachIndexed { index, style ->
-                                SegmentedButton(
-                                    selected = settings.uiStyle == style,
-                                    onClick = { clickSound(view); persist(settings.copy(uiStyle = style)) },
-                                    shape = SegmentedButtonDefaults.itemShape(
-                                        index, UiStyle.entries.size, baseShape = RoundedCornerShape(8.dp)
-                                    ),
-                                    colors = SegmentedButtonDefaults.colors(
-                                        activeContainerColor = AppBlueSoft,
-                                        activeContentColor = AppBlueDark,
-                                        activeBorderColor = AppBlue,
-                                        inactiveContainerColor = AppCardSurface,
-                                        inactiveContentColor = AppText,
-                                        inactiveBorderColor = AppBorderSoft
-                                    )
-                                ) {
-                                    Text(stringResource(if (style == UiStyle.MATERIAL3) R.string.ui_style_material else R.string.ui_style_ios))
-                                }
-                            }
-                        }
-                        Text(
-                            stringResource(R.string.ui_style_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AppMuted
-                        )
-                    }
-                }
-            }
             item { SectionLabel(stringResource(R.string.section_other_settings)) }
             item {
-                AppCard {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(
-                            stringResource(R.string.theme_mode_title),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                            ThemeMode.entries.forEachIndexed { index, mode ->
-                                SegmentedButton(
-                                    selected = settings.themeMode == mode,
-                                    onClick = { clickSound(view); persist(settings.copy(themeMode = mode)) },
-                                    shape = SegmentedButtonDefaults.itemShape(
-                                        index, ThemeMode.entries.size, baseShape = RoundedCornerShape(8.dp)
-                                    ),
-                                    colors = SegmentedButtonDefaults.colors(
-                                        activeContainerColor = AppBlueSoft,
-                                        activeContentColor = AppBlueDark,
-                                        activeBorderColor = AppBlue,
-                                        inactiveContainerColor = AppCardSurface,
-                                        inactiveContentColor = AppText,
-                                        inactiveBorderColor = AppBorderSoft
-                                    )
-                                ) {
-                                    Text(stringResource(themeLabelRes(mode)))
-                                }
-                            }
-                        }
-                        Text(
-                            stringResource(R.string.theme_mode_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AppMuted
-                        )
-                    }
-                }
+                SettingRow(
+                    Icons.Default.Palette,
+                    stringResource(R.string.appearance_title),
+                    stringResource(R.string.appearance_desc)
+                ) { navigate(Route.Appearance) }
             }
             item {
                 SettingRow(Icons.Default.Vibration, stringResource(R.string.setting_vibration_feedback), stringResource(R.string.setting_vibration_feedback_desc)) { navigate(Route.Feedback) }
@@ -1756,6 +1696,102 @@ private fun AdvancedScreen(settings: AppSettings, persist: (AppSettings) -> Unit
             }
           }
           item { InfoCard(stringResource(R.string.advanced_side_key_hint)) }
+        }
+    }
+}
+
+/**
+ * 外观设置二级页面：界面风格 + 主题模式。
+ *
+ * 两个切换器刻意保留 Material 分段控件，不使用玻璃控件——
+ * 若 iOS 风格在某台设备上渲染异常，这里始终能切回 Material 3。
+ */
+@Composable
+private fun AppearanceScreen(
+    settings: AppSettings,
+    persist: (AppSettings) -> Unit,
+    back: () -> Unit,
+    padding: PaddingValues
+) {
+    val view = LocalView.current
+    Column(Modifier.fillMaxSize().padding(padding)) {
+        BackTitle(stringResource(R.string.appearance_title), back)
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            item { SectionLabel(stringResource(R.string.ui_style_title)) }
+            item {
+                AppCard {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                            UiStyle.entries.forEachIndexed { index, style ->
+                                SegmentedButton(
+                                    selected = settings.uiStyle == style,
+                                    onClick = { clickSound(view); persist(settings.copy(uiStyle = style)) },
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index, UiStyle.entries.size, baseShape = RoundedCornerShape(8.dp)
+                                    ),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = AppBlueSoft,
+                                        activeContentColor = AppBlueDark,
+                                        activeBorderColor = AppBlue,
+                                        inactiveContainerColor = AppCardSurface,
+                                        inactiveContentColor = AppText,
+                                        inactiveBorderColor = AppBorderSoft
+                                    )
+                                ) {
+                                    Text(
+                                        stringResource(
+                                            if (style == UiStyle.MATERIAL3) R.string.ui_style_material
+                                            else R.string.ui_style_ios
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                        Text(
+                            stringResource(R.string.ui_style_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppMuted
+                        )
+                    }
+                }
+            }
+            item { SectionLabel(stringResource(R.string.theme_mode_title)) }
+            item {
+                AppCard {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                            ThemeMode.entries.forEachIndexed { index, mode ->
+                                SegmentedButton(
+                                    selected = settings.themeMode == mode,
+                                    onClick = { clickSound(view); persist(settings.copy(themeMode = mode)) },
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index, ThemeMode.entries.size, baseShape = RoundedCornerShape(8.dp)
+                                    ),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = AppBlueSoft,
+                                        activeContentColor = AppBlueDark,
+                                        activeBorderColor = AppBlue,
+                                        inactiveContainerColor = AppCardSurface,
+                                        inactiveContentColor = AppText,
+                                        inactiveBorderColor = AppBorderSoft
+                                    )
+                                ) {
+                                    Text(stringResource(themeLabelRes(mode)))
+                                }
+                            }
+                        }
+                        Text(
+                            stringResource(R.string.theme_mode_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppMuted
+                        )
+                    }
+                }
+            }
         }
     }
 }

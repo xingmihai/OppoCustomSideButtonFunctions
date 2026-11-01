@@ -221,4 +221,6 @@
     <string name="ui_style_desc">Material 3 为 Android 原生外观；iOS 液态玻璃为 Glasmio 提供的 iOS 27 风格，含玻璃材质与 iOS 语义配色。</string>
     <string name="ui_style_material">Material 3</string>
     <string name="ui_style_ios">iOS 液态玻璃</string>
+    <string name="appearance_title">外观</string>
+    <string name="appearance_desc">切换界面风格（Material 3 / iOS 液态玻璃）与明暗主题。</string>
 </resources>
