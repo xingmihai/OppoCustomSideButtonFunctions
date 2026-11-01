@@ -598,6 +598,11 @@ private fun CustomSideButtonApp() {
     }
 
     var swipeBackActive by remember { mutableStateOf(false) }
+    var swipeBackFraction by remember { mutableFloatStateOf(0f) }
+    // awaitEachGesture 的限制作用域内无法直接 snapTo，改为在协程里同步
+    LaunchedEffect(swipeBackFraction, swipeBackActive) {
+        if (swipeBackActive) predictiveProgress.snapTo(swipeBackFraction)
+    }
 
     PredictiveBackHandler(enabled = !isPrimaryRoute(route) && !swipeBackActive) { progress ->
         val destination = backDestination()
@@ -675,7 +680,7 @@ private fun CustomSideButtonApp() {
                                         swipeBackActive = true
                                         predictiveTarget = backDestination()
                                     },
-                                    onProgress = { predictiveProgress.snapTo(it) },
+                                    onProgress = { swipeBackFraction = it },
                                     onEnd = { commit ->
                                         swipeBackActive = false
                                         scope.launch {
@@ -2513,7 +2518,7 @@ private fun actionIcon(action: ActionType): ImageVector = when (action) {
 private suspend fun PointerInputScope.detectIosSwipeBack(
     edgeFraction: Float = 0.3f,
     onStart: () -> Unit,
-    onProgress: suspend (Float) -> Unit,
+    onProgress: (Float) -> Unit,
     onEnd: (commit: Boolean) -> Unit
 ) {
     val width = size.width.toFloat().coerceAtLeast(1f)
@@ -2557,7 +2562,7 @@ private suspend fun PointerInputScope.detectIosSwipeBack(
 private fun Modifier.iosSwipeBack(
     enabled: Boolean,
     onStart: () -> Unit,
-    onProgress: suspend (Float) -> Unit,
+    onProgress: (Float) -> Unit,
     onEnd: (commit: Boolean) -> Unit
 ): Modifier = if (!enabled) this else pointerInput(Unit) {
     detectIosSwipeBack(onStart = onStart, onProgress = onProgress, onEnd = onEnd)
