@@ -1155,17 +1155,17 @@ private fun MorseScreen(
         )
     }
     deleting?.let { binding ->
-        AlertDialog(
-            onDismissRequest = { deleting = null },
-            title = { Text(stringResource(R.string.dialog_delete_command_title, binding.sequence)) },
-            text = { Text(morseActionTitle(binding)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    persist(settings.copy(morseBindings = settings.morseBindings.filterNot { it.sequence == binding.sequence }))
-                    deleting = null
-                }) { Text(stringResource(R.string.btn_delete)) }
+        AppAlertDialog(
+            title = stringResource(R.string.dialog_delete_command_title, binding.sequence),
+            message = morseActionTitle(binding),
+            confirmLabel = stringResource(R.string.btn_delete),
+            onConfirm = {
+                persist(settings.copy(morseBindings = settings.morseBindings.filterNot { it.sequence == binding.sequence }))
+                deleting = null
             },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.btn_cancel)) } }
+            dismissLabel = stringResource(R.string.btn_cancel),
+            onDismiss = { deleting = null },
+            destructive = true
         )
     }
 }
@@ -1249,21 +1249,26 @@ private fun MorseBindingEditorDialog(
         else -> null
     }
     val selected = ActionChoice(action, if (action == ActionType.COMMON_FUNCTION) custom.commonAction else null)
-    val maxHeight = LocalConfiguration.current.screenHeightDp.dp * 0.85f
+    val maxHeight = LocalConfiguration.current.screenHeightDp.dp / 2
     val view = LocalView.current
 
     val keyShape = RoundedCornerShape(8.dp)
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = AppBackground,
-            modifier = Modifier.fillMaxWidth().heightIn(max = maxHeight)
+    AppAlertDialog(
+        title = if (original == null) stringResource(R.string.dialog_add_command_title)
+        else stringResource(R.string.dialog_edit_command_title),
+        confirmLabel = stringResource(R.string.btn_save),
+        onConfirm = {
+            showError = true
+            if (errorRes == null) onSave(MorseBinding(sequence, action, custom, wakeScreen, vibrationEnabled))
+        },
+        dismissLabel = stringResource(R.string.btn_cancel),
+        onDismiss = onDismiss
+    ) {
+        Column(
+            Modifier.verticalScroll(rememberScrollState()).heightIn(max = maxHeight),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(if (original == null) stringResource(R.string.dialog_add_command_title) else stringResource(R.string.dialog_edit_command_title),
-                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 AppTextField(
                     value = sequence,
                     onValueChange = { sequence = it.filter { symbol -> symbol in "01uUdD" } },
@@ -1344,14 +1349,6 @@ private fun MorseBindingEditorDialog(
                         }
                     }
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) }
-                    Button(onClick = {
-                        showError = true
-                        if (errorRes == null) onSave(MorseBinding(sequence, action, custom, wakeScreen, vibrationEnabled))
-                    }) { Text(stringResource(R.string.btn_save)) }
-                }
-            }
         }
     }
 }
@@ -2110,11 +2107,12 @@ private fun ActivityPackagePicker(
     )
 
     if (dialogVisible) {
-        AlertDialog(
-            onDismissRequest = { dialogVisible = false },
-            title = { Text(stringResource(R.string.title_select_app)) },
-            text = {
-                Column(Modifier.fillMaxWidth()) {
+        AppAlertDialog(
+            title = stringResource(R.string.title_select_app),
+            dismissLabel = stringResource(R.string.btn_cancel),
+            onDismiss = { dialogVisible = false }
+        ) {
+            Column(Modifier.fillMaxWidth()) {
                     AppTextField(
                         value = query,
                         onValueChange = { query = it },
@@ -2158,12 +2156,8 @@ private fun ActivityPackagePicker(
                             }
                         }
                     }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { dialogVisible = false }) { Text(stringResource(R.string.btn_cancel)) }
             }
-        )
+        }
     }
 }
 

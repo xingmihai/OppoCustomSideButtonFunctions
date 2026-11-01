@@ -584,3 +584,65 @@ fun AppTextField(
         )
     }
 }
+
+/**
+ * 确认/提示对话框。Glasmio 风格下用 iOS 的 [GlasmioAlertDialog]，Material 下用 [AlertDialog]。
+ *
+ * [confirmLabel] 为空时只显示取消按钮。[destructive] 把确认按钮标成 iOS 的红色破坏性样式。
+ */
+@Composable
+fun AppAlertDialog(
+    title: String,
+    message: String? = null,
+    confirmLabel: String? = null,
+    onConfirm: () -> Unit = {},
+    dismissLabel: String = "",
+    onDismiss: () -> Unit,
+    destructive: Boolean = false,
+    content: (@Composable ColumnScope.() -> Unit)? = null
+) {
+    if (isGlassStyle()) {
+        val buttons = buildList {
+            if (confirmLabel != null) {
+                add(
+                    GlasmioAlertButtonSpec(
+                        label = confirmLabel,
+                        onClick = onConfirm,
+                        role = if (destructive) GlasmioAlertButtonRole.Destructive
+                        else GlasmioAlertButtonRole.Default
+                    )
+                )
+            }
+            add(GlasmioAlertButtonSpec(dismissLabel, onDismiss, GlasmioAlertButtonRole.Cancel))
+        }
+        GlasmioAlertDialog(
+            visible = true,
+            onDismissRequest = onDismiss,
+            title = title,
+            message = if (content == null) message else null,
+            buttonLayout = if (buttons.size > 2) GlasmioAlertButtonLayout.Stacked
+            else GlasmioAlertButtonLayout.SideBySide,
+            buttons = buttons,
+            content = { content?.invoke(this) }
+        )
+    } else {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(title) },
+            text = {
+                Column {
+                    if (message != null) Text(message)
+                    content?.invoke(this)
+                }
+            },
+            confirmButton = {
+                if (confirmLabel != null) {
+                    androidx.compose.material3.TextButton(onClick = onConfirm) { Text(confirmLabel) }
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = onDismiss) { Text(dismissLabel) }
+            }
+        )
+    }
+}
