@@ -1752,35 +1752,21 @@ private fun AppearanceScreen(
             item {
                 AppCard {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                            UiStyle.entries.forEachIndexed { index, style ->
-                                SegmentedButton(
-                                    selected = settings.uiStyle == style,
-                                    onClick = { clickSound(view); persist(settings.copy(uiStyle = style)) },
-                                    shape = SegmentedButtonDefaults.itemShape(
-                                        index, UiStyle.entries.size, baseShape = RoundedCornerShape(8.dp)
-                                    ),
-                                    colors = SegmentedButtonDefaults.colors(
-                                        activeContainerColor = AppBlueSoft,
-                                        activeContentColor = AppBlueDark,
-                                        activeBorderColor = AppBlue,
-                                        inactiveContainerColor = AppCardSurface,
-                                        inactiveContentColor = AppText,
-                                        inactiveBorderColor = AppBorderSoft
-                                    )
-                                ) {
-                                    Text(
-                                        stringResource(
-                                            when (style) {
-                                                UiStyle.MATERIAL3 -> R.string.ui_style_material
-                                                UiStyle.GLASMIO -> R.string.ui_style_ios
-                                                UiStyle.MIUIX -> R.string.ui_style_miuix
-                                            }
-                                        )
-                                    )
-                                }
-                            }
-                        }
+                        AppDropdown(
+                            selected = settings.uiStyle,
+                            items = UiStyle.entries.toList(),
+                            label = { style ->
+                                stringResource(
+                                    when (style) {
+                                        UiStyle.MATERIAL3 -> R.string.ui_style_material
+                                        UiStyle.GLASMIO -> R.string.ui_style_ios
+                                        UiStyle.MIUIX -> R.string.ui_style_miuix
+                                    }
+                                )
+                            },
+                            onSelected = { clickSound(view); persist(settings.copy(uiStyle = it)) },
+                            leadingIcon = Icons.Default.Palette
+                        )
                         Text(
                             stringResource(R.string.ui_style_desc),
                             style = MaterialTheme.typography.bodySmall,
